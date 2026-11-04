@@ -77,8 +77,8 @@
   .ax{fill:var(--muted);font-size:10.5px}
   .lg{display:flex;gap:16px;justify-content:center;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:6px}
   .lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
-  .bar{transform-box:fill-box;transform-origin:50% 100%;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;cursor:pointer;transition:filter .15s}
-  .bar:hover{filter:brightness(1.12)}
+  .cbar{transform-box:fill-box;transform-origin:50% 100%;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;cursor:pointer;transition:filter .15s}
+  .cbar:hover{filter:brightness(1.12)}
   @keyframes grow{from{transform:scaleY(0)}}
   .ln{stroke-dasharray:1;stroke-dashoffset:0;animation:draw 1.3s ease both}
   @keyframes draw{from{stroke-dashoffset:1}}
@@ -113,6 +113,32 @@
   .panel.closed .pb{grid-template-rows:0fr}
   .pbi{overflow:hidden;min-height:0}
   .panel.closed>h2.ph,.panel.closed>.allh{margin-bottom:0}
+  /* ---- lively buttons ---- */
+  button.btn,a.btn,button.ib,a.ib,.seg button{position:relative;overflow:hidden;transition:transform .18s cubic-bezier(.3,1.5,.5,1),box-shadow .22s,background .22s,border-color .2s,color .2s;-webkit-tap-highlight-color:transparent}
+  button.btn:not(.g){background:linear-gradient(135deg,#2be08e,#1dbf73);box-shadow:0 4px 14px rgba(29,191,115,.35)}
+  button.btn:not(.g):hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(29,191,115,.5)}
+  button.btn.g:hover,button.ib:hover,a.ib:hover{transform:translateY(-2px);border-color:#1dbf73;box-shadow:0 8px 18px rgba(29,191,115,.22)}
+  button.btn:active,a.btn:active,button.ib:active,a.ib:active,.seg button:active{transform:scale(.94);box-shadow:none}
+  button.btn:not(.g)::after{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);transition:left .65s ease;pointer-events:none}
+  button.btn:not(.g):hover::after{left:140%}
+  .seg button:hover:not(.on){color:var(--ink);background:var(--card)}
+  .seg button.on{box-shadow:0 4px 12px rgba(29,191,115,.4)}
+  button.btn:focus-visible,button.ib:focus-visible,.seg button:focus-visible{outline:3px solid rgba(29,191,115,.45);outline-offset:2px}
+  button.btn:disabled{transform:none!important;box-shadow:none!important}
+  .rp{position:absolute;border-radius:50%;background:currentColor;opacity:.3;transform:scale(0);animation:rp .65s ease-out forwards;pointer-events:none}
+  @keyframes rp{to{transform:scale(2.8);opacity:0}}
+  .gi{display:inline-block;transition:transform .6s cubic-bezier(.3,1.4,.5,1)}
+  button.ib:hover .gi{transform:rotate(120deg)}
+  #gearBtn.on{border-color:#1dbf73}
+  #gearBtn.on .gi{transform:rotate(180deg)}
+  #themeBtn.tw{animation:tw .6s cubic-bezier(.3,1.3,.5,1)}
+  @keyframes tw{0%{transform:rotate(0) scale(1)}50%{transform:rotate(200deg) scale(1.2)}100%{transform:rotate(360deg) scale(1)}}
+  .del{transition:transform .25s cubic-bezier(.3,1.6,.5,1),color .2s}
+  .del:hover{transform:rotate(90deg) scale(1.3)}
+  button.btn.ok{background:linear-gradient(135deg,#0e9b5a,#0b7d49)!important;color:#fff!important;animation:okpop .5s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes okpop{0%{transform:scale(.9)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+  tr.newrow td{animation:rowflash 1.8s ease-out}
+  @keyframes rowflash{0%{background:rgba(29,191,115,.35)}100%{background:transparent}}
   .pop-wrap{position:relative}
   .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
   .pop.open{display:flex}
@@ -133,7 +159,7 @@
   .card.big .pos,.card.big .neg{color:inherit}
 
   .tw{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:740px}
   th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
   td{padding:11px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;vertical-align:middle}
   td.n{text-align:right} th.n{text-align:right}
@@ -163,7 +189,7 @@
       <select class="ib prof" id="profSel" title="Switch profile" onchange="switchProfile(this.value)"></select>
       <a class="ib" href="../" title="All BeeN Tools">⌂ Tools</a>
       <div class="pop-wrap">
-        <button class="ib" id="gearBtn" title="Settings" onclick="togglePop(event)">⚙</button>
+        <button class="ib" id="gearBtn" title="Settings" onclick="togglePop(event)"><span class="gi">⚙</span></button>
         <div class="pop" id="pop" onclick="event.stopPropagation()">
           <h3>Profile</h3>
           <div class="prow">
@@ -215,7 +241,7 @@
       <datalist id="gigs"></datalist>
       <label class="f s">Amount<input type="number" id="amt" min="0" step="0.01" placeholder="0.00"></label>
       <label class="f">Note<input type="text" id="note" placeholder="Optional"></label>
-      <button class="btn" onclick="addEntry()">+ Add</button>
+      <button class="btn" id="addBtn" onclick="addEntry()">+ Add</button>
     </div>
     <div class="hint" id="typeHint"></div>
   </div>
@@ -232,7 +258,7 @@
   <div class="panel">
     <h2>Entries</h2>
     <div class="tw"><table>
-      <thead><tr><th>Date</th><th>Type</th><th>Gig</th><th class="n">Amount</th><th class="n">Fee</th><th class="n">Net effect</th><th></th></tr></thead>
+      <thead><tr><th>Date</th><th>Type</th><th>Gig</th><th class="n">Amount</th><th class="n">Fee</th><th class="n">Returns</th><th class="n">Net effect</th><th></th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
     <div class="empty" id="empty">No entries yet. Add your first one above.</div>
@@ -349,13 +375,14 @@ function renderTop(){
   const m=$('fMonth').value, cls=v=>v>=0?'pos':'neg';
   const rows=DB.profiles.map(p=>{
     const r=summary(p.entries.filter(e=>!m||e.date.slice(0,7)===m),p.settings);
-    return{p,orders:r.orders,earned:r.netEarn,exp:r.adSpend+r.otherSpend+r.fakeNet};
+    return{p,orders:r.orders,earned:r.netEarn,exp:r.adSpend+r.otherSpend+r.fakeNet,back:r.fakeBack,paid:r.fakeSpent};
   });
-  const T=rows.reduce((a,x)=>({orders:a.orders+x.orders,earned:a.earned+x.earned,exp:a.exp+x.exp}),{orders:0,earned:0,exp:0});
+  const T=rows.reduce((a,x)=>({orders:a.orders+x.orders,earned:a.earned+x.earned,exp:a.exp+x.exp,back:a.back+x.back,paid:a.paid+x.paid}),{orders:0,earned:0,exp:0,back:0,paid:0});
   const net=T.earned-T.exp;
   let h=`<div class="tot">
     <div class="card"><span>Total earned</span><b class="pos" data-k="te" data-count="${T.earned}">${money(T.earned)}</b><small>after Fiverr fee · ${T.orders} orders</small></div>
     <div class="card"><span>Total expenses</span><b class="neg" data-k="tx" data-neg="1" data-count="${T.exp}">${money(-T.exp)}</b><small>ads + self paid orders</small></div>
+    <div class="card"><span>Self paid returned</span><b class="pos" data-k="tb" data-count="${T.back}">${money(T.back)}</b><small>of ${money(T.paid)} paid on self orders</small></div>
     <div class="card big"><span>Total net profit</span><b data-k="tn" data-count="${net}">${money(net)}</b><small style="color:#fff;opacity:.85">${m||'All time'} · ${DB.profiles.length} ${DB.profiles.length===1?'profile':'profiles'}</small></div>
   </div>`;
   if(DB.profiles.length>1){
@@ -389,17 +416,20 @@ function render(){
     <div class="card"><span>Fiverr seller fee</span><b class="neg">${money(-r.fees)}</b><small>${S.settings.seller}% of sales</small></div>
     <div class="card"><span>Net earnings</span><b class="pos">${money(r.netEarn)}</b><small>after fee</small></div>
     <div class="card"><span>Ad spend</span><b class="neg">${money(-r.adSpend)}</b><small>spent on Fiverr ads</small></div>
-    <div class="card"><span>Self paid orders</span><b class="neg">${money(-r.fakeNet)}</b><small>${r.fakeN} ${r.fakeN===1?"order":"orders"} · paid ${money(r.fakeSpent)}${S.settings.ret?', got back '+money(r.fakeBack):''}</small></div>`;
+    <div class="card"><span>Self paid orders</span><b class="neg">${money(-r.fakeNet)}</b><small>${r.fakeN} ${r.fakeN===1?"order":"orders"} · paid ${money(r.fakeSpent)}</small></div>
+    <div class="card"><span>Self paid returned</span><b class="pos" data-k="rb" data-count="${r.fakeBack}">${money(r.fakeBack)}</b><small>${S.settings.ret?'comes back to your balance':'off · enable in ⚙ Settings'}</small></div>`;
   animateCounts($('cards'));
 
   $('rows').innerHTML=list.map(e=>{
     const c=calc(e);
-    return `<tr><td>${esc(e.date)}</td><td><span class="tp ${e.type}">${LABEL[e.type]}</span></td>
+    return `<tr${e.id===lastNew?' class="newrow"':''}><td>${esc(e.date)}</td><td><span class="tp ${e.type}">${LABEL[e.type]}</span></td>
       <td>${esc(e.gig||'—')}${e.note?`<div class="note">${esc(e.note)}</div>`:''}</td>
       <td class="n">${money(num(e.amount))}</td><td class="n">${c.fee?money(-c.fee):'—'}</td>
+      <td class="n pos">${c.back?'+'+money(c.back):'—'}</td>
       <td class="n ${cls(c.net)}"><b>${money(c.net)}</b></td>
       <td class="n"><button class="del" title="Delete" onclick="del(${e.id})">×</button></td></tr>`;
   }).join('');
+  lastNew=null;
   $('empty').style.display=list.length?'none':'block';
   $('sFee').value=S.settings.seller;$('bFee').value=S.settings.buyer;$('cur').value=S.settings.cur;$('ret').checked=!!S.settings.ret;
   updHint();
@@ -420,7 +450,7 @@ function animateCounts(root){
 }
 
 /* ---------- charts (plain SVG, no libraries) ---------- */
-let scope='all', chartSig='';
+let scope='all', chartSig='', lastNew=null;
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const bLabel=k=>k.length===7?MON[+k.slice(5)-1]+" '"+k.slice(2,4):k.slice(8);
 const bTip=k=>k.length===7?MON[+k.slice(5)-1]+' '+k.slice(0,4):k;
@@ -462,8 +492,8 @@ function barChart(keys,B){
   let g=axes(W,H,L,R,T,Bm,keys,0,mx,y);
   keys.forEach((k,i)=>{
     const cx=L+gw*i+gw/2,b=B[k],d=i*70;
-    if(b.earn>0){const h=Math.max(2,T+ph-y(b.earn));g+=`<rect class="bar" x="${(cx-bw-2).toFixed(1)}" y="${(T+ph-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#1dbf73" style="animation-delay:${d}ms" data-tip="${esc(bTip(k)+' · Earned '+money(b.earn))}"/>`}
-    if(b.exp>0){const h=Math.max(2,T+ph-y(b.exp));g+=`<rect class="bar" x="${(cx+2).toFixed(1)}" y="${(T+ph-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#f0524f" style="animation-delay:${d+35}ms" data-tip="${esc(bTip(k)+' · Spent '+money(b.exp))}"/>`}
+    if(b.earn>0){const h=Math.max(2,T+ph-y(b.earn));g+=`<rect class="cbar" x="${(cx-bw-2).toFixed(1)}" y="${(T+ph-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#1dbf73" style="animation-delay:${d}ms" data-tip="${esc(bTip(k)+' · Earned '+money(b.earn))}"/>`}
+    if(b.exp>0){const h=Math.max(2,T+ph-y(b.exp));g+=`<rect class="cbar" x="${(cx+2).toFixed(1)}" y="${(T+ph-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#f0524f" style="animation-delay:${d+35}ms" data-tip="${esc(bTip(k)+' · Spent '+money(b.exp))}"/>`}
     if(i%step===0)g+=`<text class="ax" x="${cx.toFixed(1)}" y="${H-10}" text-anchor="middle">${bLabel(k)}</text>`;
   });
   return `<svg class="chsvg" viewBox="0 0 ${W} ${H}">${g}</svg><div class="lg"><span><i style="background:#1dbf73"></i>Earned</span><span><i style="background:#f0524f"></i>Spent</span></div>`;
@@ -529,9 +559,11 @@ function initCollapse(){
 function addEntry(){
   const amt=num($('amt').value);
   if(!$('date').value||amt<=0){$('msg').textContent='Enter a date and an amount above 0.';return}
-  S.entries.push({id:Date.now(),date:$('date').value,type:$('type').value,gig:$('gig').value.trim(),amount:amt,note:$('note').value.trim()});
+  lastNew=Date.now();S.entries.push({id:lastNew,date:$('date').value,type:$('type').value,gig:$('gig').value.trim(),amount:amt,note:$('note').value.trim()});
   $('amt').value='';$('note').value='';$('msg').textContent='';
   save();render();
+  const ab=$('addBtn');ab.classList.add('ok');ab.textContent='✓ Added';
+  setTimeout(()=>{ab.classList.remove('ok');ab.textContent='+ Add'},1000);
 }
 function del(id){S.entries=S.entries.filter(e=>e.id!==id);save();render()}
 function clearAll(){if(S.entries.length&&confirm('Delete ALL entries in profile "'+S.name+'"? Export a backup first if unsure.')){S.entries=[];save();render()}}
@@ -563,14 +595,28 @@ $('imp').addEventListener('change',e=>{
   S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.cur=$('cur').value;S.settings.ret=$('ret').checked;
   save();const keep=document.activeElement;render();if(keep&&keep.id)$(keep.id).focus();
 }));
-function updHint(){$('typeHint').textContent=HINTS[$('type').value]}
-$('type').addEventListener('change',updHint);
+function updHint(){
+  const t=$('type').value,a=num($('amt').value),st=S.settings,sf=num(st.seller)/100,bf=num(st.buyer)/100;
+  let x=HINTS[t];
+  if(a>0&&t==='fake'){const paid=a*(1+bf),back=st.ret?a*(1-sf):0;x+=` → You pay ${money(paid)}, ${st.ret?'get back '+money(back):'nothing comes back'}, net cost ${money(paid-back)}.`}
+  if(a>0&&t==='organic')x+=` → You receive ${money(a*(1-sf))} after the ${st.seller}% fee.`;
+  $('typeHint').textContent=x;
+}
+$('type').addEventListener('change',updHint);$('amt').addEventListener('input',updHint);
 $('fMonth').addEventListener('change',render);$('fGig').addEventListener('change',render);
 $('amt').addEventListener('keydown',e=>{if(e.key==='Enter')addEntry()});
 
-function togglePop(e){e.stopPropagation();$('pop').classList.toggle('open')}
-document.addEventListener('click',()=>$('pop').classList.remove('open'));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')$('pop').classList.remove('open')});
+function togglePop(e){e.stopPropagation();$('gearBtn').classList.toggle('on',$('pop').classList.toggle('open'))}
+document.addEventListener('click',()=>{$('pop').classList.remove('open');$('gearBtn').classList.remove('on')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('pop').classList.remove('open');$('gearBtn').classList.remove('on')}});
+// click ripple on every button
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button.btn,a.btn,button.ib,a.ib,.seg button');if(!b)return;
+  const r=b.getBoundingClientRect(),d=Math.max(r.width,r.height),sp=document.createElement('span');
+  sp.className='rp';sp.style.cssText=`width:${d}px;height:${d}px;left:${e.clientX-r.left-d/2}px;top:${e.clientY-r.top-d/2}px`;
+  b.appendChild(sp);setTimeout(()=>sp.remove(),700);
+});
+$('themeBtn').addEventListener('click',()=>{const b=$('themeBtn');b.classList.remove('tw');void b.offsetWidth;b.classList.add('tw')});
 BeeN.initTheme($('themeBtn'));
 load();
 $('date').value=new Date().toISOString().slice(0,10);
