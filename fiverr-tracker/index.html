@@ -27,6 +27,12 @@
   .btn.g:hover{border-color:var(--accent)}
   .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;margin-top:12px}
   .chk input{width:auto}
+  .pop-wrap{position:relative}
+  .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
+  .pop.open{display:flex}
+  .pop h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  .pop .chk{margin-top:0;line-height:1.4;align-items:flex-start}
+  .pop .chk input{margin-top:2px}
   .hint{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.5}
 
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px}
@@ -69,18 +75,18 @@
     <div class="brand"><div class="logo">F</div><div><h1>Fiverr Tracker</h1><small>Ads · organic orders · self-placed orders</small></div></div>
     <div class="right">
       <a class="ib" href="../" title="All BeeN Tools">⌂ Tools</a>
+      <div class="pop-wrap">
+        <button class="ib" id="gearBtn" title="Settings" onclick="togglePop(event)">⚙</button>
+        <div class="pop" id="pop" onclick="event.stopPropagation()">
+          <h3>Settings</h3>
+          <label class="f">Seller fee %<input type="number" id="sFee" min="0" max="100" step="0.1"></label>
+          <label class="f">Buyer fee % (self-placed orders)<input type="number" id="bFee" min="0" max="100" step="0.1"></label>
+          <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
+          <label class="chk"><input type="checkbox" id="ret"> Earnings from my self-placed orders come back to me</label>
+        </div>
+      </div>
       <button class="ib" id="themeBtn" title="Dark / Light" onclick="BeeN.toggleTheme(this)">🌙</button>
     </div>
-  </div>
-
-  <div class="panel">
-    <h2>Settings</h2>
-    <div class="row">
-      <label class="f s">Seller fee %<input type="number" id="sFee" min="0" max="100" step="0.1"></label>
-      <label class="f s">Buyer fee %<input type="number" id="bFee" min="0" max="100" step="0.1"></label>
-      <label class="f s">Currency<input type="text" id="cur" maxlength="4"></label>
-    </div>
-    <label class="chk"><input type="checkbox" id="ret"> Earnings from my own self-placed orders come back to my balance (counts only the fees as cost)</label>
   </div>
 
   <div class="panel">
@@ -260,6 +266,9 @@ $('type').addEventListener('change',()=>$('typeHint').textContent=HINTS[$('type'
 $('fMonth').addEventListener('change',render);$('fGig').addEventListener('change',render);
 $('amt').addEventListener('keydown',e=>{if(e.key==='Enter')addEntry()});
 
+function togglePop(e){e.stopPropagation();$('pop').classList.toggle('open')}
+document.addEventListener('click',()=>$('pop').classList.remove('open'));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('pop').classList.remove('open')});
 BeeN.initTheme($('themeBtn'));
 load();
 $('date').value=new Date().toISOString().slice(0,10);
