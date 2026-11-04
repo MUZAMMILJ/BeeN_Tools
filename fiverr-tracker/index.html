@@ -157,6 +157,19 @@
   @keyframes rise{0%{transform:translate3d(0,0,0) rotate(0);opacity:0}10%{opacity:var(--o,.15)}90%{opacity:var(--o,.15)}100%{transform:translate3d(var(--dx,40px),-115vh,0) rotate(var(--r,40deg));opacity:0}}
   .wrap,footer{position:relative;z-index:1}
   .panel{background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  /* ---- login gate: nothing is visible until signed in ---- */
+  body.locked .wrap,body.locked footer{display:none}
+  #gate{display:none;position:fixed;inset:0;z-index:5;align-items:center;justify-content:center;padding:20px}
+  body.locked #gate{display:flex}
+  .gcard{width:100%;max-width:400px;text-align:center;background:color-mix(in srgb,var(--card) 88%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:24px;box-shadow:0 20px 60px rgba(0,0,0,.18);padding:34px 28px;animation:gin .6s cubic-bezier(.2,.9,.3,1.2) both}
+  @keyframes gin{from{opacity:0;transform:translateY(24px) scale(.96)}}
+  .glogo{margin:0 auto 14px;width:60px;height:60px;font-size:30px;border-radius:17px;background:#1dbf73!important;color:#fff!important;font-family:Georgia,serif;font-style:italic;animation:gfloat 3.2s ease-in-out infinite}
+  @keyframes gfloat{50%{transform:translateY(-6px)}}
+  .gcard h2{margin:0 0 8px;font-size:24px}
+  .gcard p{margin:0 0 22px;color:var(--muted);font-size:14.5px;line-height:1.55}
+  .gbtn{width:100%;padding:14px;font-size:15.5px}
+  .gmsg{margin-top:14px;font-size:13px;color:var(--muted);min-height:18px}
+  .glink{display:inline-block;margin-top:14px;color:var(--muted);font-size:13.5px;text-decoration:underline}
   /* ---- cloud / account ---- */
   #cloudBtn.on2{border-color:#1dbf73;color:#0e9b5a}
   [data-theme="dark"] #cloudBtn.on2{color:#3ddc97}
@@ -205,7 +218,7 @@
   footer{text-align:center;color:var(--muted);font-size:13px;padding:24px 0 30px}
 </style>
 </head>
-<body>
+<body class="locked">
 <div class="bg" aria-hidden="true">
   <div class="par p1"><i class="blob b1"></i></div>
   <div class="par p2"><i class="blob b2"></i></div>
@@ -235,11 +248,10 @@
           <label class="f">Exchange rate fee % (self paid orders)<input type="number" id="xFee" min="0" max="100" step="0.1"></label>
           <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
           <h3 style="margin-top:4px">Account</h3>
-          <div class="acct" id="acct">Not signed in. Data is saved only in this browser.</div>
+          <div class="acct" id="acct"></div>
           <div class="prow">
-            <button class="btn g sm" id="acctIn" onclick="cloudSignIn()">Sign in with Google</button>
-            <button class="btn g sm" id="acctSync" onclick="syncCloud(true)" hidden>Sync now</button>
-            <button class="btn g sm" id="acctOut" onclick="cloudSignOut()" hidden>Sign out</button>
+            <button class="btn g sm" id="acctSync" onclick="syncCloud(true)">Sync now</button>
+            <button class="btn g sm" id="acctOut" onclick="cloudSignOut()">Sign out</button>
           </div>
           <div class="hint" id="acctStat" style="margin:0"></div>
         </div>
@@ -284,6 +296,7 @@
       <button class="btn" id="addBtn" onclick="addEntry()">+ Add</button>
     </div>
     <div class="hint" id="typeHint"></div>
+    <div class="msg" id="msg"></div>
   </div>
 
   <div class="panel">
@@ -303,21 +316,18 @@
     </table></div>
     <div class="empty" id="empty">No entries yet. Add your first one above.</div>
   </div>
-
-  <div class="panel">
-    <h2>Backup</h2>
-    <div class="tools">
-      <button class="btn g" onclick="exportJSON()">⬇ Export backup</button>
-      <button class="btn g" onclick="exportCSV()">⬇ Export CSV</button>
-      <button class="btn g" onclick="document.getElementById('imp').click()">⬆ Import backup</button>
-      <button class="btn g" onclick="clearAll()">Delete all</button>
-      <input type="file" id="imp" accept=".json,application/json" hidden>
-    </div>
-    <div class="hint">No login needed. Data is saved in this browser. Sign in with Google (☁ button) to also save it to your account and open it on any device. You can still export a backup.</div>
-    <div class="msg" id="msg"></div>
-  </div>
 </div>
 <div id="tip"></div>
+<div id="gate">
+  <div class="gcard">
+    <div class="logo glogo">F</div>
+    <h2>Fiverr Tracker</h2>
+    <p>Sign in with Google to open your tracker. Your entries are saved to your account and open on any device.</p>
+    <button class="btn gbtn" id="gateBtn" onclick="cloudSignIn()" disabled>Sign in with Google</button>
+    <div class="gmsg" id="gateMsg">Checking your sign-in…</div>
+    <a class="glink" href="../">← Back to BeeN Tools</a>
+  </div>
+</div>
 <div id="toast"></div>
 <footer>Part of <a href="../" style="color:inherit">BeeN Tools</a></footer>
 
@@ -338,22 +348,30 @@ function norm(e){if(!e)return e;const x=Object.assign({},e);
   else if(x.type==='spent')x.type=(x.cat==='fake')?'fake':'ads';
   delete x.cat;return x}
 const KEY2='beenFiver2';
+let LKEY=KEY2;   // becomes beenFiver2_<uid> once someone is signed in
 const DEF=()=>({seller:20,buyer:5,tax:7,fx:2,cur:'$',ret:true});
 let DB={active:null,profiles:[]}, S=null, syncT=null, FB=null, gUser=null;   // S = the active profile {id,name,settings,entries}
 const newProfile=name=>({id:'p'+Date.now()+Math.floor(Math.random()*1000),name,settings:DEF(),upd:Date.now(),entries:[]});
 
 function load(){
-  try{const d=JSON.parse(localStorage.getItem(KEY2));if(d&&Array.isArray(d.profiles)&&d.profiles.length)DB=d}catch(e){}
-  if(!DB.profiles.length){            // first run, or migrate data saved by the older single-profile version
+  const raw=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+  const ok=d=>d&&Array.isArray(d.profiles)&&d.profiles.length;
+  let d=raw(LKEY);
+  if(!ok(d)){                                  // data saved on this browser before login existed -> adopt it once
+    d=raw(KEY2);
+    if(ok(d)){try{localStorage.removeItem(KEY2)}catch(e){}}else d=null;
+  }
+  if(d)DB=d;
+  if(!DB.profiles.length){                     // first run, or the oldest single-profile format
     const p=newProfile('Profile 1');
-    try{const o=JSON.parse(localStorage.getItem(KEY));if(o&&Array.isArray(o.entries)){p.entries=o.entries;p.settings=Object.assign(DEF(),o.settings)}}catch(e){}
+    const o=raw(KEY);if(o&&Array.isArray(o.entries)){p.entries=o.entries;p.settings=Object.assign(DEF(),o.settings)}
     DB={active:p.id,profiles:[p]};
   }
   DB.profiles.forEach(p=>{p.settings=Object.assign(DEF(),p.settings);p.entries=(p.entries||[]).map(norm)});
   pick(DB.active);
 }
 function pick(id){DB.profiles.forEach(p=>p.settings.ret=true);S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
-function save(){try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}queueSync()}
+function save(){try{localStorage.setItem(LKEY,JSON.stringify(DB))}catch(e){}queueSync()}
 const num=v=>{v=parseFloat(v);return isFinite(v)?v:0};
 const money=v=>{const s=S.settings.cur||'';const a=Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});return (v<0?'−':'')+s+a};
 
@@ -430,7 +448,7 @@ function renameProfile(){
 }
 function delProfile(){
   if(DB.profiles.length<2)return;
-  if(!confirm('Delete profile "'+S.name+'" and all its entries? Export a backup first if unsure.'))return;
+  if(!confirm('Delete profile "'+S.name+'" and all its entries?'))return;
   (DB.delP=DB.delP||{})[S.id]=Date.now();DB.profiles=DB.profiles.filter(p=>p.id!==S.id);switchProfile(DB.profiles[0].id);$('pop').classList.remove('open');
 }
 
@@ -608,8 +626,7 @@ function authUI(){
   $('cloudBtn').textContent=on?'☁ Synced':'☁ Sign in';
   $('cloudBtn').title=on?('Signed in as '+who+' — click to sync now'):'Sign in with Google to save your data to your account';
   $('cloudBtn').classList.toggle('on2',on);
-  $('acct').textContent=on?('Signed in as '+who):'Not signed in. Data is saved only in this browser.';
-  $('acctIn').hidden=on;$('acctSync').hidden=!on;$('acctOut').hidden=!on;
+  $('acct').textContent=on?('Signed in as '+who):'';
 }
 async function fbInit(){
   if(FB)return FB;
@@ -618,17 +635,43 @@ async function fbInit(){
   catch(e){throw new Error('No internet connection')}
   const a=app.initializeApp(BeeN.firebaseConfig);
   FB={auth,fs,au:auth.getAuth(a),db:fs.getFirestore(a)};
-  auth.onAuthStateChanged(FB.au,u=>{gUser=u;authUI();if(u){try{localStorage.setItem('beenWasIn','1')}catch(e){}syncCloud()}});
+  auth.onAuthStateChanged(FB.au,u=>{
+    gUser=u;authUI();
+    if(u){try{localStorage.setItem('beenWasIn','1')}catch(e){}if(!started)startApp(u);else syncCloud(false)}
+    else if(started)location.reload();                 // signed out (here or in another tab) -> lock the page again
+    else showGate(sessionStorage.getItem('beenOut')?'Signed out.':'',true);
+  });
   return FB;
 }
 async function cloudSignIn(){
-  if(location.protocol==='file:'){toast('Google sign-in works on the live website, not from a local file.');return}
-  try{setCloud('Opening Google sign-in…');const f=await fbInit();await f.auth.signInWithPopup(f.au,new f.auth.GoogleAuthProvider())}
-  catch(e){setCloud('⚠ '+(e.code||e.message));toast('Sign-in failed: '+(e.code||e.message))}
+  if(location.protocol==='file:'){showGate('Sign-in works on the live website, not from a local file.',false);return}
+  try{showGate('Opening Google sign-in…',false);setCloud('Opening Google sign-in…');const f=await fbInit();await f.auth.signInWithPopup(f.au,new f.auth.GoogleAuthProvider())}
+  catch(e){setCloud('⚠ '+(e.code||e.message));showGate('Sign-in failed: '+(e.code==='auth/popup-closed-by-user'?'the Google window was closed.':(e.code||e.message)),true)}
 }
 async function cloudSignOut(){
-  if(FB)await FB.auth.signOut(FB.au);gUser=null;try{localStorage.removeItem('beenWasIn')}catch(e){}
-  authUI();setCloud('');toast('Signed out. Your data stays on this device.');
+  try{sessionStorage.setItem('beenOut','1')}catch(e){}
+  try{localStorage.removeItem('beenWasIn')}catch(e){}
+  try{if(FB)await FB.auth.signOut(FB.au)}catch(e){}
+  location.reload();                                   // wipes the page from memory; the gate comes back
+}
+let started=false;
+function showGate(msg,enable){
+  document.body.classList.add('locked');
+  $('gateMsg').textContent=msg||'';$('gateBtn').disabled=(enable===false);
+}
+function startApp(u){                                  // runs only after a successful Google sign-in
+  started=true;try{sessionStorage.removeItem('beenOut')}catch(e){}
+  LKEY=KEY2+'_'+u.uid;
+  load();$('date').value=new Date().toISOString().slice(0,10);
+  render();initCollapse();authUI();
+  document.body.classList.remove('locked');
+  syncCloud(false);
+}
+async function boot(){
+  if(location.protocol==='file:'){showGate('Sign-in works on the live website, not from a local file.',false);return}
+  showGate('Checking your sign-in…',false);
+  try{await fbInit()}
+  catch(e){showGate('⚠ '+e.message+'. Sign-in needs a connection — check it and reload.',false)}
 }
 function cloudClick(){gUser?syncCloud(true):cloudSignIn()}
 function queueSync(){if(!gUser||!FB)return;clearTimeout(syncT);syncT=setTimeout(()=>syncCloud(false),1200)}
@@ -659,7 +702,7 @@ async function syncCloud(manual){
       DB.profiles.forEach(p=>{p.settings=Object.assign(DEF(),p.settings);p.entries=(p.entries||[]).map(norm)});
       pick(DB.active);
     }
-    try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}
+    try{localStorage.setItem(LKEY,JSON.stringify(DB))}catch(e){}
     await setDoc(ref,{fiverData:JSON.stringify(DB),fiverUpdated:Date.now()},{merge:true});
     render();
     const t=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
@@ -710,36 +753,6 @@ function addEntry(){
   setTimeout(()=>{ab.classList.remove('ok');ab.textContent='+ Add'},1000);
 }
 function del(id){(DB.delE=DB.delE||{})[id]=Date.now();S.entries=S.entries.filter(e=>e.id!==id);save();render()}
-function clearAll(){if(S.entries.length&&confirm('Delete ALL entries in profile "'+S.name+'"? Export a backup first if unsure.')){S.entries.forEach(e=>{(DB.delE=DB.delE||{})[e.id]=Date.now()});S.entries=[];save();render()}}
-
-function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-function exportJSON(){dl('fiverr-tracker-backup.json',JSON.stringify(DB,null,2),'application/json')}
-function exportCSV(){
-  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
-  const rows=[['Date','Type','Gig','Amount','Fee','Net effect','Note']];
-  S.entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const c=calc(e);rows.push([e.date,LABEL[e.type],e.gig,e.amount,c.fee.toFixed(2),c.net.toFixed(2),e.note])});
-  dl('fiverr-tracker-'+S.name.replace(/[^\w-]+/g,'_')+'.csv',rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
-}
-$('imp').addEventListener('change',e=>{
-  const f=e.target.files[0];if(!f)return;
-  const clean=list=>(list||[]).map(norm).filter(x=>x&&x.date&&LABEL[x.type]).map(x=>({id:x.id||Date.now()+Math.random(),date:String(x.date),type:x.type,gig:String(x.gig||''),amount:num(x.amount),note:String(x.note||'')}));
-  const r=new FileReader();r.onload=()=>{try{
-    const d=JSON.parse(r.result);
-    if(Array.isArray(d.profiles)&&d.profiles.length){
-      const oldE=DB.profiles.flatMap(p=>p.entries.map(x=>x.id)),oldP=DB.profiles.map(p=>p.id),dE=Object.assign({},DB.delE),dP=Object.assign({},DB.delP);
-      DB={active:d.active,profiles:d.profiles.map(p=>({id:String(p.id||newProfile('x').id),name:String(p.name||'Profile'),settings:Object.assign(DEF(),p.settings),upd:Date.now(),entries:clean(p.entries)}))};
-      const newE=new Set(DB.profiles.flatMap(p=>p.entries.map(x=>x.id)));
-      oldE.forEach(id=>{if(!newE.has(id))dE[id]=Date.now()});oldP.forEach(id=>{if(!DB.profiles.some(p=>p.id===id))dP[id]=Date.now()});
-      DB.delE=dE;DB.delP=dP;
-    }else if(Array.isArray(d.entries)){      // older single-profile backup -> goes into the current profile
-      const oldE=S.entries.map(x=>x.id);S.entries=clean(d.entries);S.settings=Object.assign(DEF(),d.settings);S.upd=Date.now();
-      const newE=new Set(S.entries.map(x=>x.id));DB.delE=DB.delE||{};oldE.forEach(id=>{if(!newE.has(id))DB.delE[id]=Date.now()});
-    }else throw 0;
-    pick(DB.active);save();$('fMonth').value='';$('fGig').value='';render();$('msg').textContent='Backup imported.'
-  }catch(err){$('msg').textContent='That file is not a valid backup.'}};
-  r.readAsText(f);e.target.value='';
-});
-
 ['sFee','bFee','tFee','xFee','cur'].forEach(id=>$(id).addEventListener('input',()=>{
   S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.tax=num($('tFee').value);S.settings.fx=num($('xFee').value);S.settings.cur=$('cur').value;S.settings.ret=true;S.upd=Date.now();
   save();const keep=document.activeElement;render();if(keep&&keep.id)$(keep.id).focus();
@@ -770,12 +783,7 @@ document.addEventListener('click',e=>{
 });
 $('themeBtn').addEventListener('click',()=>{const b=$('themeBtn');b.classList.remove('tw');void b.offsetWidth;b.classList.add('tw')});
 BeeN.initTheme($('themeBtn'));
-load();
-$('date').value=new Date().toISOString().slice(0,10);
-render();
-initCollapse();
-authUI();
-if(location.protocol!=='file:'&&navigator.onLine){let w=null;try{w=localStorage.getItem('beenWasIn')}catch(e){}if(w)fbInit().catch(()=>{})}
+boot();
 </script>
 </body>
 </html>
