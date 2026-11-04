@@ -102,7 +102,7 @@
   .dl span{color:var(--muted);flex:1}
   .dl em{font-style:normal;color:var(--muted);font-size:12px;min-width:34px;text-align:right}
   .dn0{color:var(--muted);font-size:14px;padding:50px 0}
-  #tip{position:fixed;z-index:60;display:none;pointer-events:none;background:#1f2430;color:#fff;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:260px}
+  #tip{white-space:pre-line;line-height:1.5;position:fixed;z-index:60;display:none;pointer-events:none;background:#1f2430;color:#fff;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:260px}
   @media(max-width:820px){.cgrid{grid-template-columns:1fr}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   .ph{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px}
@@ -139,8 +139,9 @@
   @keyframes okpop{0%{transform:scale(.9)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
   tr.newrow td{animation:rowflash 1.8s ease-out}
   @keyframes rowflash{0%{background:rgba(29,191,115,.35)}100%{background:transparent}}
+  .tipc{border-bottom:1px dotted var(--muted);cursor:help}
   .pop-wrap{position:relative}
-  .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
+  .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;max-height:84vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
   .pop.open{display:flex}
   .pop h3{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
   .pop .chk{margin-top:0;line-height:1.4;align-items:flex-start}
@@ -199,7 +200,9 @@
           </div>
           <h3 style="margin-top:4px">Settings (this profile)</h3>
           <label class="f">Seller fee %<input type="number" id="sFee" min="0" max="100" step="0.1"></label>
-          <label class="f">Buyer fee % (self-placed orders)<input type="number" id="bFee" min="0" max="100" step="0.1"></label>
+          <label class="f">Buyer fee % (self paid orders)<input type="number" id="bFee" min="0" max="100" step="0.1"></label>
+          <label class="f">Buy tax % (self paid orders)<input type="number" id="tFee" min="0" max="100" step="0.1"></label>
+          <label class="f">Exchange rate fee % (self paid orders)<input type="number" id="xFee" min="0" max="100" step="0.1"></label>
           <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
           <label class="chk"><input type="checkbox" id="ret"> Earnings from my self paid orders come back to me</label>
         </div>
@@ -287,7 +290,7 @@ const $=id=>document.getElementById(id);
 const HINTS={
   organic:'Money you received from an order that came by itself. Fiverr takes the seller fee from it.',
   ads:'Money you spent on Fiverr ads. Counts fully as an expense.',
-  fake:'An order you placed yourself: you pay the amount plus the buyer fee; the gig earns the amount minus the seller fee.'
+  fake:'An order you placed yourself: you pay the order plus buyer fee, buy tax and exchange fee; the gig earns the order minus the seller fee.'
 };
 const LABEL={organic:'Organic order',ads:'Ads',fake:'Self paid order'};
 // older versions used other types; convert them to the 3 current ones
@@ -297,7 +300,7 @@ function norm(e){if(!e)return e;const x=Object.assign({},e);
   else if(x.type==='spent')x.type=(x.cat==='fake')?'fake':'ads';
   delete x.cat;return x}
 const KEY2='beenFiver2';
-const DEF=()=>({seller:20,buyer:5,cur:'$',ret:true});
+const DEF=()=>({seller:20,buyer:5,tax:7,fx:2,cur:'$',ret:true});
 let DB={active:null,profiles:[]}, S=null;   // S = the active profile {id,name,settings,entries}
 const newProfile=name=>({id:'p'+Date.now()+Math.floor(Math.random()*1000),name,settings:DEF(),entries:[]});
 
@@ -319,13 +322,35 @@ const money=v=>{const s=S.settings.cur||'';const a=Math.abs(v).toLocaleString(un
 // Core formulas for one entry
 function calc(e,st){
   st=st||S.settings;
-  const a=num(e.amount),sf=num(st.seller)/100,bf=num(st.buyer)/100;
-  if(e.type==='organic'){const fee=a*sf;return{fee,net:a-fee}}           // you receive amount − seller fee
-  if(e.type==='ads'){return{fee:0,net:-a}}                                                  // pure expense
-  // self-placed: you pay amount + buyer fee; if earnings return, you get back amount − seller fee
-  const fee=a*bf+(st.ret?a*sf:0);
-  const spent=a+a*bf, back=st.ret?a-a*sf:0;
-  return{fee,net:-(spent-back),spent,back};
+  const a=num(e.amount),sf=num(st.seller)/100,bf=num(st.buyer)/100,tx=num(st.tax)/100,fx=num(st.fx)/100;
+  if(e.type==='organic'){const seller=a*sf;return{fee:seller,net:a-seller,parts:{seller}}}   // you receive amount − seller fee
+  if(e.type==='ads'){return{fee:0,net:-a,parts:{}}}                                         // pure expense
+  // self paid order — what you PAY: order + buyer fee + buy tax + exchange fee
+  //                  what COMES BACK: order − seller fee (only if "comes back" is on)
+  const buyer=a*bf,tax=a*tx,fxf=a*fx,spent=a+buyer+tax+fxf;
+  const seller=st.ret?a*sf:0, back=st.ret?a-seller:0;
+  return{fee:buyer+tax+fxf+seller,net:-(spent-back),spent,back,parts:{buyer,tax,fx:fxf,seller}};
+}
+// readable breakdowns (used in tooltips + the live preview)
+function feeLines(e,c,st){
+  st=st||S.settings;const L=[];
+  if(e.type==='organic')L.push(`Seller fee ${st.seller}% = ${money(c.parts.seller)}`);
+  else if(e.type==='fake'){
+    L.push(`Buyer fee ${st.buyer}% = ${money(c.parts.buyer)}`,`Buy tax ${st.tax}% = ${money(c.parts.tax)}`,`Exchange fee ${st.fx}% = ${money(c.parts.fx)}`);
+    L.push(st.ret?`Seller fee ${st.seller}% = ${money(c.parts.seller)} (taken from the return)`:'Seller fee: not counted (returns are off)');
+  }
+  if(L.length>1)L.push(`Total fees = ${money(c.fee)}`);
+  return L.join('\n');
+}
+function backTip(e,c,st){
+  st=st||S.settings;
+  if(e.type!=='fake')return '';
+  return st.ret?`Order ${money(num(e.amount))} − seller fee ${st.seller}% (${money(c.parts.seller)}) = ${money(c.back)} comes back to your balance`:'Returns are turned off in ⚙ Settings';
+}
+function netTip(e,c){
+  if(e.type==='fake')return `Paid ${money(c.spent)} (order + buyer fee + tax + exchange)\nReturned ${money(c.back)}\nNet cost = ${money(-c.net)}`;
+  if(e.type==='organic')return `Order ${money(num(e.amount))} − seller fee ${S.settings.seller}% (${money(c.fee)}) = ${money(c.net)} earned`;
+  return `Ad spend ${money(num(e.amount))}`;
 }
 
 function filtered(){
@@ -424,14 +449,14 @@ function render(){
     const c=calc(e);
     return `<tr${e.id===lastNew?' class="newrow"':''}><td>${esc(e.date)}</td><td><span class="tp ${e.type}">${LABEL[e.type]}</span></td>
       <td>${esc(e.gig||'—')}${e.note?`<div class="note">${esc(e.note)}</div>`:''}</td>
-      <td class="n">${money(num(e.amount))}</td><td class="n">${c.fee?money(-c.fee):'—'}</td>
-      <td class="n pos">${c.back?'+'+money(c.back):'—'}</td>
-      <td class="n ${cls(c.net)}"><b>${money(c.net)}</b></td>
+      <td class="n">${money(num(e.amount))}</td><td class="n">${c.fee?`<span class="tipc" data-tip="${esc(feeLines(e,c))}">${money(-c.fee)}</span>`:'—'}</td>
+      <td class="n pos">${c.back?`<span class="tipc" data-tip="${esc(backTip(e,c))}">+${money(c.back)}</span>`:'—'}</td>
+      <td class="n ${cls(c.net)}"><b class="tipc" data-tip="${esc(netTip(e,c))}">${money(c.net)}</b></td>
       <td class="n"><button class="del" title="Delete" onclick="del(${e.id})">×</button></td></tr>`;
   }).join('');
   lastNew=null;
   $('empty').style.display=list.length?'none':'block';
-  $('sFee').value=S.settings.seller;$('bFee').value=S.settings.buyer;$('cur').value=S.settings.cur;$('ret').checked=!!S.settings.ret;
+  $('sFee').value=S.settings.seller;$('bFee').value=S.settings.buyer;$('tFee').value=S.settings.tax;$('xFee').value=S.settings.fx;$('cur').value=S.settings.cur;$('ret').checked=!!S.settings.ret;
   updHint();
 }
 
@@ -591,15 +616,18 @@ $('imp').addEventListener('change',e=>{
   r.readAsText(f);e.target.value='';
 });
 
-['sFee','bFee','cur','ret'].forEach(id=>$(id).addEventListener('input',()=>{
-  S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.cur=$('cur').value;S.settings.ret=$('ret').checked;
+['sFee','bFee','tFee','xFee','cur','ret'].forEach(id=>$(id).addEventListener('input',()=>{
+  S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.tax=num($('tFee').value);S.settings.fx=num($('xFee').value);S.settings.cur=$('cur').value;S.settings.ret=$('ret').checked;
   save();const keep=document.activeElement;render();if(keep&&keep.id)$(keep.id).focus();
 }));
 function updHint(){
-  const t=$('type').value,a=num($('amt').value),st=S.settings,sf=num(st.seller)/100,bf=num(st.buyer)/100;
+  const t=$('type').value,a=num($('amt').value);
   let x=HINTS[t];
-  if(a>0&&t==='fake'){const paid=a*(1+bf),back=st.ret?a*(1-sf):0;x+=` → You pay ${money(paid)}, ${st.ret?'get back '+money(back):'nothing comes back'}, net cost ${money(paid-back)}.`}
-  if(a>0&&t==='organic')x+=` → You receive ${money(a*(1-sf))} after the ${st.seller}% fee.`;
+  if(a>0&&t!=='ads'){
+    const e={type:t,amount:a},c=calc(e),st=S.settings;
+    if(t==='fake')x+=` → You pay ${money(c.spent)} (order ${money(a)} + buyer fee ${money(c.parts.buyer)} + buy tax ${money(c.parts.tax)} + exchange ${money(c.parts.fx)}). `+(st.ret?`Returns ${money(c.back)} (order − seller fee ${money(c.parts.seller)}). `:'Nothing comes back. ')+`Net cost ${money(-c.net)}.`;
+    else x+=` → You receive ${money(c.net)} (order ${money(a)} − seller fee ${money(c.parts.seller)}).`;
+  }
   $('typeHint').textContent=x;
 }
 $('type').addEventListener('change',updHint);$('amt').addEventListener('input',updHint);
