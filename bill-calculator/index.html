@@ -437,7 +437,7 @@ async function syncCloud(){
     if(snap.exists()){ try{ remote=JSON.parse(snap.data().data)||{}; }catch(e){} }
     const merged=mergeBills(getBills(),remote);
     putBills(merged); renderHistory();
-    await setDoc(ref,{data:JSON.stringify(merged),updatedAt:Date.now()});
+    await setDoc(ref,{data:JSON.stringify(merged),updatedAt:Date.now()},{merge:true});
     setDrive('✔ Synced · '+(gUser.email||'')+' · '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
   }catch(e){ setDrive('⚠ '+(e.code||e.message)); }
 }

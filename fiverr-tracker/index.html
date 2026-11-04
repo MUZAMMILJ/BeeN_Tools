@@ -140,6 +140,29 @@
   tr.newrow td{animation:rowflash 1.8s ease-out}
   @keyframes rowflash{0%{background:rgba(29,191,115,.35)}100%{background:transparent}}
   .tipc{border-bottom:1px dotted var(--muted);cursor:help}
+  /* ---- live animated background ---- */
+  .bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .par{position:absolute;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+  .p1{left:-8%;top:-10%;transform:translate(calc(var(--mx,0)*40px),calc(var(--my,0)*30px))}
+  .p2{right:-10%;top:22%;transform:translate(calc(var(--mx,0)*-55px),calc(var(--my,0)*-35px))}
+  .p3{left:22%;bottom:-20%;transform:translate(calc(var(--mx,0)*30px),calc(var(--my,0)*-45px))}
+  .blob{display:block;border-radius:50%;filter:blur(70px);opacity:.5;animation:drift 22s ease-in-out infinite alternate}
+  .b1{width:520px;height:520px;background:radial-gradient(circle,#1dbf73,transparent 70%)}
+  .b2{width:460px;height:460px;background:radial-gradient(circle,#2fd7c4,transparent 70%);animation-duration:28s;animation-delay:-8s}
+  .b3{width:560px;height:560px;background:radial-gradient(circle,#ffbf47,transparent 70%);opacity:.3;animation-duration:34s;animation-delay:-14s}
+  [data-theme="dark"] .blob{opacity:.26}
+  [data-theme="dark"] .b3{opacity:.14}
+  @keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(70px,-50px) scale(1.15)}100%{transform:translate(-60px,60px) scale(.92)}}
+  .fl{position:absolute;bottom:-60px;color:#1dbf73;font-weight:800;opacity:0;animation:rise linear infinite;will-change:transform}
+  @keyframes rise{0%{transform:translate3d(0,0,0) rotate(0);opacity:0}10%{opacity:var(--o,.15)}90%{opacity:var(--o,.15)}100%{transform:translate3d(var(--dx,40px),-115vh,0) rotate(var(--r,40deg));opacity:0}}
+  .wrap,footer{position:relative;z-index:1}
+  .panel{background:color-mix(in srgb,var(--card) 82%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  /* ---- cloud / account ---- */
+  #cloudBtn.on2{border-color:#1dbf73;color:#0e9b5a}
+  [data-theme="dark"] #cloudBtn.on2{color:#3ddc97}
+  .acct{font-size:13px;color:var(--muted);line-height:1.4;word-break:break-all}
+  #toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:#1f2430;color:#fff;padding:11px 18px;border-radius:12px;font-weight:600;font-size:14px;z-index:70;pointer-events:none;transition:opacity .35s,transform .35s;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
   .pop-wrap{position:relative}
   .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;max-height:84vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
   .pop.open{display:flex}
@@ -183,10 +206,17 @@
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true">
+  <div class="par p1"><i class="blob b1"></i></div>
+  <div class="par p2"><i class="blob b2"></i></div>
+  <div class="par p3"><i class="blob b3"></i></div>
+  <div id="floaters"></div>
+</div>
 <div class="wrap">
   <div class="bar">
     <div class="brand"><div class="logo">F</div><div><h1>Fiverr Tracker</h1><small>Organic orders · ads · self paid orders</small></div></div>
     <div class="right">
+      <button class="ib" id="cloudBtn" title="Sign in with Google to save your data to your account" onclick="cloudClick()">☁ Sign in</button>
       <select class="ib prof" id="profSel" title="Switch profile" onchange="switchProfile(this.value)"></select>
       <a class="ib" href="../" title="All BeeN Tools">⌂ Tools</a>
       <div class="pop-wrap">
@@ -204,6 +234,14 @@
           <label class="f">Buy tax % (self paid orders)<input type="number" id="tFee" min="0" max="100" step="0.1"></label>
           <label class="f">Exchange rate fee % (self paid orders)<input type="number" id="xFee" min="0" max="100" step="0.1"></label>
           <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
+          <h3 style="margin-top:4px">Account</h3>
+          <div class="acct" id="acct">Not signed in. Data is saved only in this browser.</div>
+          <div class="prow">
+            <button class="btn g sm" id="acctIn" onclick="cloudSignIn()">Sign in with Google</button>
+            <button class="btn g sm" id="acctSync" onclick="syncCloud(true)" hidden>Sync now</button>
+            <button class="btn g sm" id="acctOut" onclick="cloudSignOut()" hidden>Sign out</button>
+          </div>
+          <div class="hint" id="acctStat" style="margin:0"></div>
         </div>
       </div>
       <button class="ib" id="themeBtn" title="Dark / Light" onclick="BeeN.toggleTheme(this)">🌙</button>
@@ -275,11 +313,12 @@
       <button class="btn g" onclick="clearAll()">Delete all</button>
       <input type="file" id="imp" accept=".json,application/json" hidden>
     </div>
-    <div class="hint">No login needed. Your data is saved only in this browser on this device. Export a backup if you want to move it or keep it safe.</div>
+    <div class="hint">No login needed. Data is saved in this browser. Sign in with Google (☁ button) to also save it to your account and open it on any device. You can still export a backup.</div>
     <div class="msg" id="msg"></div>
   </div>
 </div>
 <div id="tip"></div>
+<div id="toast"></div>
 <footer>Part of <a href="../" style="color:inherit">BeeN Tools</a></footer>
 
 <script src="../assets/shared.js"></script>
@@ -300,8 +339,8 @@ function norm(e){if(!e)return e;const x=Object.assign({},e);
   delete x.cat;return x}
 const KEY2='beenFiver2';
 const DEF=()=>({seller:20,buyer:5,tax:7,fx:2,cur:'$',ret:true});
-let DB={active:null,profiles:[]}, S=null;   // S = the active profile {id,name,settings,entries}
-const newProfile=name=>({id:'p'+Date.now()+Math.floor(Math.random()*1000),name,settings:DEF(),entries:[]});
+let DB={active:null,profiles:[]}, S=null, syncT=null, FB=null, gUser=null;   // S = the active profile {id,name,settings,entries}
+const newProfile=name=>({id:'p'+Date.now()+Math.floor(Math.random()*1000),name,settings:DEF(),upd:Date.now(),entries:[]});
 
 function load(){
   try{const d=JSON.parse(localStorage.getItem(KEY2));if(d&&Array.isArray(d.profiles)&&d.profiles.length)DB=d}catch(e){}
@@ -314,7 +353,7 @@ function load(){
   pick(DB.active);
 }
 function pick(id){DB.profiles.forEach(p=>p.settings.ret=true);S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
-function save(){try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}}
+function save(){try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}queueSync()}
 const num=v=>{v=parseFloat(v);return isFinite(v)?v:0};
 const money=v=>{const s=S.settings.cur||'';const a=Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});return (v<0?'−':'')+s+a};
 
@@ -387,12 +426,12 @@ function addProfile(){
 }
 function renameProfile(){
   const n=(prompt('Rename profile:',S.name)||'').trim();
-  if(!n)return;S.name=n;save();render();
+  if(!n)return;S.name=n;S.upd=Date.now();save();render();
 }
 function delProfile(){
   if(DB.profiles.length<2)return;
   if(!confirm('Delete profile "'+S.name+'" and all its entries? Export a backup first if unsure.'))return;
-  DB.profiles=DB.profiles.filter(p=>p.id!==S.id);switchProfile(DB.profiles[0].id);$('pop').classList.remove('open');
+  (DB.delP=DB.delP||{})[S.id]=Date.now();DB.profiles=DB.profiles.filter(p=>p.id!==S.id);switchProfile(DB.profiles[0].id);$('pop').classList.remove('open');
 }
 
 function renderTop(){
@@ -559,6 +598,87 @@ document.addEventListener('mousemove',e=>{
   tip.style.left=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,e.clientX+14))+'px';tip.style.top=(e.clientY+18)+'px';
 });
 
+/* ---------- optional Google sign-in + cloud sync ----------
+   Uses the same Firebase project and the same per-user document as the BeeN Calculator
+   (beenBills/{uid}), in its OWN field (fiverData), so no Firebase rules need to change. */
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),3200)}
+function setCloud(t){$('acctStat').textContent=t}
+function authUI(){
+  const on=!!gUser,who=on?(gUser.email||gUser.displayName||''):'';
+  $('cloudBtn').textContent=on?'☁ Synced':'☁ Sign in';
+  $('cloudBtn').title=on?('Signed in as '+who+' — click to sync now'):'Sign in with Google to save your data to your account';
+  $('cloudBtn').classList.toggle('on2',on);
+  $('acct').textContent=on?('Signed in as '+who):'Not signed in. Data is saved only in this browser.';
+  $('acctIn').hidden=on;$('acctSync').hidden=!on;$('acctOut').hidden=!on;
+}
+async function fbInit(){
+  if(FB)return FB;
+  const base='https://www.gstatic.com/firebasejs/10.12.2/';let app,auth,fs;
+  try{[app,auth,fs]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-auth.js'),import(base+'firebase-firestore.js')])}
+  catch(e){throw new Error('No internet connection')}
+  const a=app.initializeApp(BeeN.firebaseConfig);
+  FB={auth,fs,au:auth.getAuth(a),db:fs.getFirestore(a)};
+  auth.onAuthStateChanged(FB.au,u=>{gUser=u;authUI();if(u){try{localStorage.setItem('beenWasIn','1')}catch(e){}syncCloud()}});
+  return FB;
+}
+async function cloudSignIn(){
+  if(location.protocol==='file:'){toast('Google sign-in works on the live website, not from a local file.');return}
+  try{setCloud('Opening Google sign-in…');const f=await fbInit();await f.auth.signInWithPopup(f.au,new f.auth.GoogleAuthProvider())}
+  catch(e){setCloud('⚠ '+(e.code||e.message));toast('Sign-in failed: '+(e.code||e.message))}
+}
+async function cloudSignOut(){
+  if(FB)await FB.auth.signOut(FB.au);gUser=null;try{localStorage.removeItem('beenWasIn')}catch(e){}
+  authUI();setCloud('');toast('Signed out. Your data stays on this device.');
+}
+function cloudClick(){gUser?syncCloud(true):cloudSignIn()}
+function queueSync(){if(!gUser||!FB)return;clearTimeout(syncT);syncT=setTimeout(()=>syncCloud(false),1200)}
+
+// merge two copies (a = this device, b = cloud): union of profiles and entries, minus anything deleted on either side
+function mergeDB(a,b){
+  const delE=Object.assign({},b.delE,a.delE),delP=Object.assign({},b.delP,a.delP),map={};
+  [b,a].forEach(src=>(src.profiles||[]).forEach(p=>{
+    if(delP[p.id])return;
+    const m=map[p.id];
+    if(!m)map[p.id]={id:p.id,name:p.name,settings:p.settings,upd:p.upd||0,entries:{}};
+    else if((p.upd||0)>=m.upd){m.name=p.name;m.settings=p.settings;m.upd=p.upd||0}
+    (p.entries||[]).forEach(e=>{if(!delE[e.id])map[p.id].entries[e.id]=e});
+  }));
+  const profiles=Object.values(map).map(p=>Object.assign({},p,{entries:Object.values(p.entries)}));
+  return{active:a.active,profiles:profiles.length?profiles:a.profiles,delE,delP};
+}
+async function syncCloud(manual){
+  if(!gUser||!FB){if(manual)cloudSignIn();return}
+  setCloud('Syncing…');
+  try{
+    const {doc,getDoc,setDoc}=FB.fs,ref=doc(FB.db,'beenBills',gUser.uid);
+    const snap=await getDoc(ref);let remote=null;
+    if(snap.exists()){try{remote=JSON.parse(snap.data().fiverData)}catch(e){}}
+    if(remote&&Array.isArray(remote.profiles)){
+      const m=mergeDB(DB,remote);
+      DB.profiles=m.profiles;DB.delE=m.delE;DB.delP=m.delP;
+      DB.profiles.forEach(p=>{p.settings=Object.assign(DEF(),p.settings);p.entries=(p.entries||[]).map(norm)});
+      pick(DB.active);
+    }
+    try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}
+    await setDoc(ref,{fiverData:JSON.stringify(DB),fiverUpdated:Date.now()},{merge:true});
+    render();
+    const t=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setCloud('✔ Synced · '+t);if(manual)toast('✔ Saved to your account');
+  }catch(e){setCloud('⚠ '+(e.code||e.message));if(manual||e.code==='permission-denied')toast('Sync failed: '+(e.code||e.message))}
+}
+
+/* ---------- live background: floating symbols + mouse parallax ---------- */
+(function liveBg(){
+  const f=document.getElementById('floaters'),sym=['$','%','€','₨','$','↗','★','$'];
+  for(let i=0;i<16;i++){
+    const sp=document.createElement('span');sp.className='fl';sp.textContent=sym[i%sym.length];
+    sp.style.cssText=`left:${Math.random()*100}%;font-size:${14+Math.random()*26}px;animation-duration:${20+Math.random()*24}s;animation-delay:${-Math.random()*40}s;--o:${(.08+Math.random()*.12).toFixed(2)};--dx:${((Math.random()-.5)*160).toFixed(0)}px;--r:${((Math.random()-.5)*120).toFixed(0)}deg`;
+    f.appendChild(sp);
+  }
+  let raf=0;
+  addEventListener('pointermove',e=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;document.body.style.setProperty('--mx',((e.clientX/innerWidth-.5)*2).toFixed(3));document.body.style.setProperty('--my',((e.clientY/innerHeight-.5)*2).toFixed(3))})},{passive:true});
+})();
+
 /* ---------- collapsible sections ---------- */
 function initCollapse(){
   let st={};try{st=JSON.parse(localStorage.getItem('beenFiverUI'))||{}}catch(e){}
@@ -589,8 +709,8 @@ function addEntry(){
   const ab=$('addBtn');ab.classList.add('ok');ab.textContent='✓ Added';
   setTimeout(()=>{ab.classList.remove('ok');ab.textContent='+ Add'},1000);
 }
-function del(id){S.entries=S.entries.filter(e=>e.id!==id);save();render()}
-function clearAll(){if(S.entries.length&&confirm('Delete ALL entries in profile "'+S.name+'"? Export a backup first if unsure.')){S.entries=[];save();render()}}
+function del(id){(DB.delE=DB.delE||{})[id]=Date.now();S.entries=S.entries.filter(e=>e.id!==id);save();render()}
+function clearAll(){if(S.entries.length&&confirm('Delete ALL entries in profile "'+S.name+'"? Export a backup first if unsure.')){S.entries.forEach(e=>{(DB.delE=DB.delE||{})[e.id]=Date.now()});S.entries=[];save();render()}}
 
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
 function exportJSON(){dl('fiverr-tracker-backup.json',JSON.stringify(DB,null,2),'application/json')}
@@ -606,9 +726,14 @@ $('imp').addEventListener('change',e=>{
   const r=new FileReader();r.onload=()=>{try{
     const d=JSON.parse(r.result);
     if(Array.isArray(d.profiles)&&d.profiles.length){
-      DB={active:d.active,profiles:d.profiles.map(p=>({id:String(p.id||newProfile('x').id),name:String(p.name||'Profile'),settings:Object.assign(DEF(),p.settings),entries:clean(p.entries)}))};
+      const oldE=DB.profiles.flatMap(p=>p.entries.map(x=>x.id)),oldP=DB.profiles.map(p=>p.id),dE=Object.assign({},DB.delE),dP=Object.assign({},DB.delP);
+      DB={active:d.active,profiles:d.profiles.map(p=>({id:String(p.id||newProfile('x').id),name:String(p.name||'Profile'),settings:Object.assign(DEF(),p.settings),upd:Date.now(),entries:clean(p.entries)}))};
+      const newE=new Set(DB.profiles.flatMap(p=>p.entries.map(x=>x.id)));
+      oldE.forEach(id=>{if(!newE.has(id))dE[id]=Date.now()});oldP.forEach(id=>{if(!DB.profiles.some(p=>p.id===id))dP[id]=Date.now()});
+      DB.delE=dE;DB.delP=dP;
     }else if(Array.isArray(d.entries)){      // older single-profile backup -> goes into the current profile
-      S.entries=clean(d.entries);S.settings=Object.assign(DEF(),d.settings);
+      const oldE=S.entries.map(x=>x.id);S.entries=clean(d.entries);S.settings=Object.assign(DEF(),d.settings);S.upd=Date.now();
+      const newE=new Set(S.entries.map(x=>x.id));DB.delE=DB.delE||{};oldE.forEach(id=>{if(!newE.has(id))DB.delE[id]=Date.now()});
     }else throw 0;
     pick(DB.active);save();$('fMonth').value='';$('fGig').value='';render();$('msg').textContent='Backup imported.'
   }catch(err){$('msg').textContent='That file is not a valid backup.'}};
@@ -616,7 +741,7 @@ $('imp').addEventListener('change',e=>{
 });
 
 ['sFee','bFee','tFee','xFee','cur'].forEach(id=>$(id).addEventListener('input',()=>{
-  S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.tax=num($('tFee').value);S.settings.fx=num($('xFee').value);S.settings.cur=$('cur').value;S.settings.ret=true;
+  S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.tax=num($('tFee').value);S.settings.fx=num($('xFee').value);S.settings.cur=$('cur').value;S.settings.ret=true;S.upd=Date.now();
   save();const keep=document.activeElement;render();if(keep&&keep.id)$(keep.id).focus();
 }));
 function updHint(){
@@ -649,6 +774,8 @@ load();
 $('date').value=new Date().toISOString().slice(0,10);
 render();
 initCollapse();
+authUI();
+if(location.protocol!=='file:'&&navigator.onLine){let w=null;try{w=localStorage.getItem('beenWasIn')}catch(e){}if(w)fbInit().catch(()=>{})}
 </script>
 </body>
 </html>
