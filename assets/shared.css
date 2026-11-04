@@ -1,0 +1,14 @@
+/* BeeN Tools — shared design tokens & base styles (used by every page) */
+:root{
+  --bg:#f4f1ea; --card:#ffffff; --ink:#1f2430; --muted:#7a7f8c; --line:#e8e4da;
+  --field:#faf8f3; --accent:#f5a623; --accent-ink:#3a2600; --shadow:0 10px 30px rgba(40,30,10,.10);
+  --glow:rgba(245,166,35,.18);
+}
+[data-theme="dark"]{
+  --bg:#14161c; --card:#1d2029; --ink:#eef0f5; --muted:#8e94a3; --line:#2c303c;
+  --field:#252936; --accent:#f5b53f; --accent-ink:#2a1c00; --shadow:0 10px 30px rgba(0,0,0,.45);
+  --glow:rgba(245,181,63,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);transition:background .25s,color .25s}
+.logo{width:42px;height:42px;border-radius:12px;background:#2a1a00;color:#ffbf47;display:grid;place-items:center;font-weight:800;font-size:22px}
