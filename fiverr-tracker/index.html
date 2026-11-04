@@ -61,6 +61,48 @@
   table.pt tr.pr:hover td{background:var(--field)}
   table.pt tr.act td{background:var(--field);font-weight:700}
   table.pt tr.act td:first-child{box-shadow:inset 3px 0 0 #1dbf73}
+  .tp.spent{background:#fdeae7;color:#d6402f}
+  [data-theme="dark"] .tp.spent{background:#3a1f1c;color:#ff7b6b}
+  .seg{display:flex;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:3px}
+  .seg button{border:0;background:none;color:var(--muted);font-weight:700;font-size:13px;padding:7px 14px;border-radius:8px;cursor:pointer;transition:background .2s,color .2s}
+  .seg button.on{background:#1dbf73;color:#fff}
+  .cgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .cbox{background:var(--field);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
+  .cbox h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:700}
+  .chsvg{width:100%;height:auto;display:block;overflow:visible}
+  .gl{stroke:var(--line);stroke-width:1}
+  .zl{stroke:var(--muted);stroke-width:1;stroke-dasharray:4 4;opacity:.6}
+  .ax{fill:var(--muted);font-size:10.5px}
+  .lg{display:flex;gap:16px;justify-content:center;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:6px}
+  .lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+  .bar{transform-box:fill-box;transform-origin:50% 100%;animation:grow .8s cubic-bezier(.2,.8,.2,1) both;cursor:pointer;transition:filter .15s}
+  .bar:hover{filter:brightness(1.12)}
+  @keyframes grow{from{transform:scaleY(0)}}
+  .ln{stroke-dasharray:1;stroke-dashoffset:0;animation:draw 1.3s ease both}
+  @keyframes draw{from{stroke-dashoffset:1}}
+  .area{animation:fadeIn 1.2s .3s ease both}
+  @keyframes fadeIn{from{opacity:0}}
+  .dot{transform-box:fill-box;transform-origin:center;animation:pop .45s cubic-bezier(.3,1.6,.5,1) both;cursor:pointer}
+  .dot:hover{r:6.5}
+  @keyframes pop{from{opacity:0;transform:scale(0)}}
+  .dwrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;min-height:150px}
+  .dsvg{position:relative;width:140px;height:140px;flex:none}
+  .dsvg svg{width:100%;height:100%}
+  .sc{animation:dn 1s cubic-bezier(.3,.7,.3,1) both;cursor:pointer;transition:stroke-width .15s}
+  .sc:hover{stroke-width:6.4}
+  @keyframes dn{from{stroke-dasharray:0 100}}
+  .dc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+  .dc b{font-size:15px;letter-spacing:-.02em}
+  .dc span{font-size:11px;color:var(--muted);font-weight:600}
+  .dl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px;flex:1;min-width:150px}
+  .dl li{display:flex;align-items:center;gap:8px}
+  .dl i{width:10px;height:10px;border-radius:3px;flex:none}
+  .dl span{color:var(--muted);flex:1}
+  .dl em{font-style:normal;color:var(--muted);font-size:12px;min-width:34px;text-align:right}
+  .dn0{color:var(--muted);font-size:14px;padding:50px 0}
+  #tip{position:fixed;z-index:60;display:none;pointer-events:none;background:#1f2430;color:#fff;font-size:12.5px;font-weight:600;padding:7px 11px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.3);max-width:260px}
+  @media(max-width:820px){.cgrid{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   .pop-wrap{position:relative}
   .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
   .pop.open{display:flex}
@@ -135,17 +177,32 @@
     <div id="allBody"></div>
   </div>
 
+  <div class="panel" id="chartPanel">
+    <div class="allh"><h2 style="margin:0">Charts</h2>
+      <div class="seg" id="seg"><button class="on" data-s="all" onclick="setScope('all')">All profiles</button><button data-s="one" onclick="setScope('one')">This profile</button></div>
+    </div>
+    <div class="cgrid" id="chGrid">
+      <div class="cbox"><h3>Earned vs spent</h3><div id="chBar"></div></div>
+      <div class="cbox"><h3>Net profit over time</h3><div id="chLine"></div></div>
+      <div class="cbox"><h3>Where income comes from</h3><div id="chInc"></div></div>
+      <div class="cbox"><h3>Where money is spent</h3><div id="chExp"></div></div>
+    </div>
+    <div class="empty" id="chEmpty">Add some entries to see your charts.</div>
+  </div>
+
   <div class="panel">
     <h2>Add entry</h2>
     <div class="row">
       <label class="f s" style="flex:0 0 150px">Date<input type="date" id="date"></label>
       <label class="f" style="flex:1.3">Type
         <select id="type">
-          <option value="organic">Organic order (received)</option>
-          <option value="adorder">Ad order (received)</option>
-          <option value="ad">Ad spend</option>
-          <option value="fake">Self-placed order (I paid)</option>
+          <option value="organic">Organic</option>
+          <option value="adorder">Paid order</option>
+          <option value="spent">Spent</option>
         </select>
+      </label>
+      <label class="f" id="catWrap" style="display:none">Spent on
+        <select id="cat"><option value="ads">Ads</option><option value="fake">Self-placed order</option><option value="other">Other</option></select>
       </label>
       <label class="f">Gig<input type="text" id="gig" list="gigs" placeholder="Gig name"></label>
       <datalist id="gigs"></datalist>
@@ -187,6 +244,7 @@
     <div class="msg" id="msg"></div>
   </div>
 </div>
+<div id="tip"></div>
 <footer>Part of <a href="../" style="color:inherit">BeeN Tools</a></footer>
 
 <script src="../assets/shared.js"></script>
@@ -195,11 +253,19 @@ const KEY='beenFiver';
 const $=id=>document.getElementById(id);
 const HINTS={
   organic:'Money you received from an order that came by itself. Fiverr takes the seller fee from it.',
-  adorder:'Money you received from an order that came through your Fiverr ads. Fiverr takes the seller fee from it.',
-  ad:'Money you spent on Fiverr ads. Counts fully as an expense.',
-  fake:'An order you placed yourself. You pay the amount plus the buyer fee; the gig earns the amount minus the seller fee.'
+  adorder:'Money you received from an order that came through your paid Fiverr ads. Fiverr takes the seller fee from it.'
 };
-const LABEL={organic:'Organic',adorder:'Ad order',ad:'Ad spend',fake:'Self-placed'};
+const CATHINT={
+  ads:'Money spent on Fiverr ads. Counts fully as an expense.',
+  fake:'An order you placed yourself: you pay the amount plus the buyer fee; the gig earns the amount minus the seller fee.',
+  other:'Any other cost. Counts fully as an expense.'
+};
+const LABEL={organic:'Organic',adorder:'Paid order',spent:'Spent'};
+const CATL={ads:'Ads',fake:'Self-placed order',other:'Other'};
+// older versions used 4 types; convert them to the 3 types + category
+function norm(e){if(!e)return e;const x=Object.assign({},e);
+  if(x.type==='ad'){x.type='spent';x.cat='ads'}else if(x.type==='fake'){x.type='spent';x.cat='fake'}
+  if(x.type==='spent'&&!CATL[x.cat])x.cat='other';return x}
 const KEY2='beenFiver2';
 const DEF=()=>({seller:20,buyer:5,cur:'$',ret:true});
 let DB={active:null,profiles:[]}, S=null;   // S = the active profile {id,name,settings,entries}
@@ -212,7 +278,7 @@ function load(){
     try{const o=JSON.parse(localStorage.getItem(KEY));if(o&&Array.isArray(o.entries)){p.entries=o.entries;p.settings=Object.assign(DEF(),o.settings)}}catch(e){}
     DB={active:p.id,profiles:[p]};
   }
-  DB.profiles.forEach(p=>p.settings=Object.assign(DEF(),p.settings));
+  DB.profiles.forEach(p=>{p.settings=Object.assign(DEF(),p.settings);p.entries=(p.entries||[]).map(norm)});
   pick(DB.active);
 }
 function pick(id){S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
@@ -225,7 +291,7 @@ function calc(e,st){
   st=st||S.settings;
   const a=num(e.amount),sf=num(st.seller)/100,bf=num(st.buyer)/100;
   if(e.type==='organic'||e.type==='adorder'){const fee=a*sf;return{fee,net:a-fee}}           // you receive amount − seller fee
-  if(e.type==='ad'){return{fee:0,net:-a}}                                                  // pure expense
+  if(e.type==='spent'&&e.cat!=='fake'){return{fee:0,net:-a}}                                                  // pure expense
   // self-placed: you pay amount + buyer fee; if earnings return, you get back amount − seller fee
   const fee=a*bf+(st.ret?a*sf:0);
   const spent=a+a*bf, back=st.ret?a-a*sf:0;
@@ -238,15 +304,16 @@ function filtered(){
 }
 
 function summary(list,st){
-  const r={gross:0,fees:0,netEarn:0,orgN:0,adN:0,orgGross:0,adGross:0,adSpend:0,fakeN:0,fakeSpent:0,fakeBack:0,fakeNet:0};
+  const r={gross:0,fees:0,netEarn:0,orgN:0,adN:0,orgGross:0,adGross:0,adSpend:0,otherSpend:0,fakeN:0,fakeSpent:0,fakeBack:0,fakeNet:0};
   list.forEach(e=>{
     const c=calc(e,st),a=num(e.amount);
     if(e.type==='organic'){r.orgN++;r.orgGross+=a;r.gross+=a;r.fees+=c.fee;r.netEarn+=c.net}
     else if(e.type==='adorder'){r.adN++;r.adGross+=a;r.gross+=a;r.fees+=c.fee;r.netEarn+=c.net}
-    else if(e.type==='ad'){r.adSpend+=a}
+    else if(e.cat==='ads'){r.adSpend+=a}
+    else if(e.cat==='other'){r.otherSpend+=a}
     else{r.fakeN++;r.fakeSpent+=c.spent;r.fakeBack+=c.back;r.fakeNet+=-c.net}
   });
-  r.profit=r.netEarn-r.adSpend-r.fakeNet;
+  r.profit=r.netEarn-r.adSpend-r.otherSpend-r.fakeNet;
   r.orders=r.orgN+r.adN;
   r.cpa=r.adN?r.adSpend/r.adN:0;
   r.roas=r.adSpend?r.adGross/r.adSpend:0;
@@ -280,14 +347,14 @@ function renderTop(){
   const m=$('fMonth').value, cls=v=>v>=0?'pos':'neg';
   const rows=DB.profiles.map(p=>{
     const r=summary(p.entries.filter(e=>!m||e.date.slice(0,7)===m),p.settings);
-    return{p,orders:r.orders,earned:r.netEarn,exp:r.adSpend+r.fakeNet};
+    return{p,orders:r.orders,earned:r.netEarn,exp:r.adSpend+r.otherSpend+r.fakeNet};
   });
   const T=rows.reduce((a,x)=>({orders:a.orders+x.orders,earned:a.earned+x.earned,exp:a.exp+x.exp}),{orders:0,earned:0,exp:0});
   const net=T.earned-T.exp;
   let h=`<div class="tot">
-    <div class="card"><span>Total earned</span><b class="pos">${money(T.earned)}</b><small>after Fiverr fee · ${T.orders} orders</small></div>
-    <div class="card"><span>Total expenses</span><b class="neg">${money(-T.exp)}</b><small>ads + self-placed orders</small></div>
-    <div class="card big"><span>Total net profit</span><b>${money(net)}</b><small style="color:#fff;opacity:.85">${m||'All time'} · ${DB.profiles.length} ${DB.profiles.length===1?'profile':'profiles'}</small></div>
+    <div class="card"><span>Total earned</span><b class="pos" data-k="te" data-count="${T.earned}">${money(T.earned)}</b><small>after Fiverr fee · ${T.orders} orders</small></div>
+    <div class="card"><span>Total expenses</span><b class="neg" data-k="tx" data-neg="1" data-count="${T.exp}">${money(-T.exp)}</b><small>ads, self-placed &amp; other</small></div>
+    <div class="card big"><span>Total net profit</span><b data-k="tn" data-count="${net}">${money(net)}</b><small style="color:#fff;opacity:.85">${m||'All time'} · ${DB.profiles.length} ${DB.profiles.length===1?'profile':'profiles'}</small></div>
   </div>`;
   if(DB.profiles.length>1){
     h+=`<div class="tw"><table class="pt"><thead><tr><th>Profile</th><th class="n">Orders</th><th class="n">Earned</th><th class="n">Expenses</th><th class="n">Net</th></tr></thead><tbody>`+
@@ -295,6 +362,7 @@ function renderTop(){
       `</tbody></table></div>`;
   }
   $('allBody').innerHTML=h;
+  animateCounts($('allBody'));
 }
 
 function render(){
@@ -308,23 +376,24 @@ function render(){
   if(months.includes(pm))$('fMonth').value=pm; if(gigs.includes(pg))$('fGig').value=pg;
   $('gigs').innerHTML=gigs.map(g=>`<option value="${esc(g)}">`).join('');
 
-  renderTop();
+  renderTop();renderCharts();
   const list=filtered().sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
   const r=summary(list);
   const cls=v=>v>=0?'pos':'neg';
   $('cards').innerHTML=`
-    <div class="card big"><span>Net profit</span><b class="${cls(r.profit)}">${money(r.profit)}</b></div>
+    <div class="card big"><span>Net profit</span><b class="${cls(r.profit)}" data-k="np" data-count="${r.profit}">${money(r.profit)}</b></div>
     <div class="card"><span>Orders received</span><b>${r.orders}</b><small>${r.orgN} organic · ${r.adN} from ads</small></div>
     <div class="card"><span>Gross sales</span><b>${money(r.gross)}</b><small>before Fiverr fee</small></div>
     <div class="card"><span>Fiverr seller fee</span><b class="neg">${money(-r.fees)}</b><small>${S.settings.seller}% of sales</small></div>
     <div class="card"><span>Net earnings</span><b class="pos">${money(r.netEarn)}</b><small>after fee</small></div>
     <div class="card"><span>Ad spend</span><b class="neg">${money(-r.adSpend)}</b><small>${r.adN?money(r.cpa)+' per ad order':'no ad orders yet'}</small></div>
     <div class="card"><span>Ad return (ROAS)</span><b>${r.adSpend?r.roas.toFixed(2)+'×':'—'}</b><small>ad sales ÷ ad spend</small></div>
-    <div class="card"><span>Self-placed orders</span><b class="neg">${money(-r.fakeNet)}</b><small>${r.fakeN} ${r.fakeN===1?"order":"orders"} · paid ${money(r.fakeSpent)}${S.settings.ret?', got back '+money(r.fakeBack):''}</small></div>`;
+    <div class="card"><span>Self-placed orders</span><b class="neg">${money(-r.fakeNet)}</b><small>${r.fakeN} ${r.fakeN===1?"order":"orders"} · paid ${money(r.fakeSpent)}${S.settings.ret?', got back '+money(r.fakeBack):''}</small></div>${r.otherSpend?`<div class="card"><span>Other spend</span><b class="neg">${money(-r.otherSpend)}</b><small>other expenses</small></div>`:''}`;
+  animateCounts($('cards'));
 
   $('rows').innerHTML=list.map(e=>{
     const c=calc(e);
-    return `<tr><td>${esc(e.date)}</td><td><span class="tp ${e.type}">${LABEL[e.type]}</span></td>
+    return `<tr><td>${esc(e.date)}</td><td><span class="tp ${e.type}">${LABEL[e.type]}</span>${e.type==='spent'?`<div class="note">${CATL[e.cat]}</div>`:''}</td>
       <td>${esc(e.gig||'—')}${e.note?`<div class="note">${esc(e.note)}</div>`:''}</td>
       <td class="n">${money(num(e.amount))}</td><td class="n">${c.fee?money(-c.fee):'—'}</td>
       <td class="n ${cls(c.net)}"><b>${money(c.net)}</b></td>
@@ -332,13 +401,112 @@ function render(){
   }).join('');
   $('empty').style.display=list.length?'none':'block';
   $('sFee').value=S.settings.seller;$('bFee').value=S.settings.buyer;$('cur').value=S.settings.cur;$('ret').checked=!!S.settings.ret;
-  $('typeHint').textContent=HINTS[$('type').value];
+  updHint();
 }
+
+/* ---------- animated count-up ---------- */
+const _cv={};
+function animateCounts(root){
+  const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  root.querySelectorAll('[data-count]').forEach(el=>{
+    const to=+el.dataset.count,k=el.dataset.k,from=_cv[k]!==undefined?_cv[k]:0,neg=el.dataset.neg==='1';
+    _cv[k]=to;
+    const fmt=v=>money(neg?-v:v);
+    if(reduce||from===to){el.textContent=fmt(to);return}
+    const t0=performance.now(),D=700;
+    (function step(t){const p=Math.min(1,(t-t0)/D),e=1-Math.pow(1-p,3);el.textContent=fmt(from+(to-from)*e);if(p<1)requestAnimationFrame(step)})(t0);
+  });
+}
+
+/* ---------- charts (plain SVG, no libraries) ---------- */
+let scope='all', chartSig='';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const bLabel=k=>k.length===7?MON[+k.slice(5)-1]+" '"+k.slice(2,4):k.slice(8);
+const bTip=k=>k.length===7?MON[+k.slice(5)-1]+' '+k.slice(0,4):k;
+const short=v=>{const a=Math.abs(v);const t=a>=1e6?(a/1e6).toFixed(1)+'M':a>=1e3?(a/1e3).toFixed(a>=1e4?0:1)+'k':String(Math.round(a*100)/100);return (v<0?'−':'')+t};
+function niceMax(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v))),f=v/p;return (f<=1?1:f<=2?2:f<=4?4:f<=8?8:10)*p}
+function niceAxis(mn,mx){const p=Math.pow(10,Math.floor(Math.log10((mx-mn)/4)));for(const f of [1,2,2.5,5,10,20,25,50]){const st=f*p,lo=Math.floor(mn/st+1e-9)*st;if(lo+4*st>=mx-1e-9)return[lo,lo+4*st]}return[mn,mx]}
+function setScope(sc){scope=sc;document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on',b.dataset.s===sc));renderCharts(true)}
+
+function renderCharts(force){
+  const m=$('fMonth').value, profs=scope==='all'?DB.profiles:[S], dayMode=!!m;
+  const B={}, inc={organic:0,adorder:0}, ex={ads:0,fake:0,other:0};
+  profs.forEach(p=>p.entries.forEach(e=>{
+    if(m&&e.date.slice(0,7)!==m)return;
+    const c=calc(e,p.settings),k=dayMode?e.date:e.date.slice(0,7),b=B[k]||(B[k]={earn:0,exp:0});
+    if(e.type==='spent'){const x=-c.net;b.exp+=x;ex[e.cat]+=x}else{b.earn+=c.net;inc[e.type]+=c.net}
+  }));
+  let keys=Object.keys(B).sort(); if(!dayMode)keys=keys.slice(-12);
+  $('chEmpty').style.display=keys.length?'none':'block';$('chGrid').style.display=keys.length?'':'none';
+  const sig=JSON.stringify([scope,m,S.settings.cur,keys.map(k=>[k,B[k]]),inc,ex]);
+  if(!force&&sig===chartSig)return; chartSig=sig;
+  if(!keys.length)return;
+  $('chBar').innerHTML=barChart(keys,B);
+  $('chLine').innerHTML=lineChart(keys,B);
+  $('chInc').innerHTML=donut([{label:'Organic',val:inc.organic,color:'#1dbf73'},{label:'Paid orders',val:inc.adorder,color:'#4a7dff'}],'Earned');
+  $('chExp').innerHTML=donut([{label:'Ads',val:ex.ads,color:'#f5a623'},{label:'Self-placed',val:ex.fake,color:'#f0524f'},{label:'Other',val:ex.other,color:'#8e94a3'}],'Spent');
+}
+
+function axes(W,H,L,R,T,Bm,keys,ymin,ymax,yf){
+  const ph=H-T-Bm,pw=W-L-R,n=keys.length,step=Math.ceil(n/10);let g='';
+  for(let i=0;i<=4;i++){const v=ymin+(ymax-ymin)*i/4,yy=yf(v);g+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}"/><text class="ax" x="${L-6}" y="${yy+4}" text-anchor="end">${short(v)}</text>`}
+  return g;
+}
+
+function barChart(keys,B){
+  const W=560,H=250,L=44,R=8,T=14,Bm=30,pw=W-L-R,ph=H-T-Bm,n=keys.length;
+  const mx=niceMax(Math.max(0,...keys.map(k=>Math.max(B[k].earn,B[k].exp))));
+  const y=v=>T+ph-(v/mx)*ph, gw=pw/n, bw=Math.max(4,Math.min(26,gw*0.34)), step=Math.ceil(n/10);
+  let g=axes(W,H,L,R,T,Bm,keys,0,mx,y);
+  keys.forEach((k,i)=>{
+    const cx=L+gw*i+gw/2,b=B[k],d=i*70;
+    if(b.earn>0){const h=Math.max(2,T+ph-y(b.earn));g+=`<rect class="bar" x="${(cx-bw-2).toFixed(1)}" y="${(T+ph-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#1dbf73" style="animation-delay:${d}ms" data-tip="${esc(bTip(k)+' · Earned '+money(b.earn))}"/>`}
+    if(b.exp>0){const h=Math.max(2,T+ph-y(b.exp));g+=`<rect class="bar" x="${(cx+2).toFixed(1)}" y="${(T+ph-h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="#f0524f" style="animation-delay:${d+35}ms" data-tip="${esc(bTip(k)+' · Spent '+money(b.exp))}"/>`}
+    if(i%step===0)g+=`<text class="ax" x="${cx.toFixed(1)}" y="${H-10}" text-anchor="middle">${bLabel(k)}</text>`;
+  });
+  return `<svg class="chsvg" viewBox="0 0 ${W} ${H}">${g}</svg><div class="lg"><span><i style="background:#1dbf73"></i>Earned</span><span><i style="background:#f0524f"></i>Spent</span></div>`;
+}
+
+function lineChart(keys,B){
+  const W=560,H=250,L=44,R=14,T=14,Bm=30,pw=W-L-R,ph=H-T-Bm,n=keys.length,step=Math.ceil(n/10);
+  let c=0;const vals=keys.map(k=>c+=B[k].earn-B[k].exp);
+  let mn=Math.min(0,...vals),mx=Math.max(0,...vals);if(mn===mx)mx=mn+1;[mn,mx]=niceAxis(mn,mx);
+  const x=i=>n===1?L+pw/2:L+pw*i/(n-1), y=v=>T+ph-((v-mn)/(mx-mn))*ph;
+  let g=axes(W,H,L,R,T,Bm,keys,mn,mx,y);
+  const col=vals[n-1]>=0?'#1dbf73':'#f0524f', pts=vals.map((v,i)=>[x(i),y(v)]);
+  const d=pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join(' ');
+  const z=y(0).toFixed(1);
+  g+=`<line class="zl" x1="${L}" x2="${W-R}" y1="${z}" y2="${z}"/>`;
+  g+=`<defs><linearGradient id="lgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".35"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>`;
+  g+=`<path class="area" d="${d} L${pts[n-1][0].toFixed(1)} ${z} L${pts[0][0].toFixed(1)} ${z} Z" fill="url(#lgA)"/>`;
+  if(n>1)g+=`<path class="ln" pathLength="1" d="${d}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+  pts.forEach((q,i)=>{g+=`<circle class="dot" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4.5" fill="var(--card)" stroke="${col}" stroke-width="2.5" style="animation-delay:${700+i*45}ms" data-tip="${esc(bTip(keys[i])+' · Net total '+money(vals[i]))}"/>`;
+    if(i%step===0)g+=`<text class="ax" x="${q[0].toFixed(1)}" y="${H-10}" text-anchor="middle">${bLabel(keys[i])}</text>`});
+  return `<svg class="chsvg" viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+
+function donut(parts,label){
+  const tot=parts.reduce((a,q)=>a+q.val,0);
+  if(tot<=0)return `<div class="dwrap"><div class="dn0">No data yet</div></div>`;
+  const live=parts.filter(q=>q.val>0);let acc=0,segs='';
+  live.forEach((q,i)=>{const pct=q.val/tot*100,gap=live.length>1?Math.min(1.2,pct/3):0;
+    segs+=`<circle class="sc" cx="21" cy="21" r="15.9155" pathLength="100" fill="none" stroke="${q.color}" stroke-width="5.2" stroke-dasharray="${(pct-gap).toFixed(2)} ${(100-pct+gap).toFixed(2)}" stroke-dashoffset="${(-acc).toFixed(2)}" style="animation-delay:${i*160}ms" data-tip="${esc(q.label+' · '+money(q.val)+' ('+pct.toFixed(0)+'%)')}"/>`;acc+=pct});
+  const lg=parts.map(q=>`<li><i style="background:${q.color}"></i><span>${q.label}</span><b>${money(q.val)}</b><em>${(q.val/tot*100).toFixed(0)}%</em></li>`).join('');
+  return `<div class="dwrap"><div class="dsvg"><svg viewBox="0 0 42 42" style="transform:rotate(-90deg)"><circle cx="21" cy="21" r="15.9155" fill="none" stroke="var(--line)" stroke-width="5.2"/>${segs}</svg><div class="dc"><b>${money(tot)}</b><span>${label}</span></div></div><ul class="dl">${lg}</ul></div>`;
+}
+
+/* tooltip */
+document.addEventListener('mousemove',e=>{
+  const t=e.target.closest&&e.target.closest('[data-tip]'),tip=$('tip');
+  if(!t){tip.style.display='none';return}
+  tip.textContent=t.dataset.tip;tip.style.display='block';
+  tip.style.left=Math.max(8,Math.min(innerWidth-tip.offsetWidth-8,e.clientX+14))+'px';tip.style.top=(e.clientY+18)+'px';
+});
 
 function addEntry(){
   const amt=num($('amt').value);
   if(!$('date').value||amt<=0){$('msg').textContent='Enter a date and an amount above 0.';return}
-  S.entries.push({id:Date.now(),date:$('date').value,type:$('type').value,gig:$('gig').value.trim(),amount:amt,note:$('note').value.trim()});
+  S.entries.push({id:Date.now(),date:$('date').value,type:$('type').value,cat:$('type').value==='spent'?$('cat').value:'',gig:$('gig').value.trim(),amount:amt,note:$('note').value.trim()});
   $('amt').value='';$('note').value='';$('msg').textContent='';
   save();render();
 }
@@ -350,12 +518,12 @@ function exportJSON(){dl('fiverr-tracker-backup.json',JSON.stringify(DB,null,2),
 function exportCSV(){
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const rows=[['Date','Type','Gig','Amount','Fee','Net effect','Note']];
-  S.entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const c=calc(e);rows.push([e.date,LABEL[e.type],e.gig,e.amount,c.fee.toFixed(2),c.net.toFixed(2),e.note])});
+  S.entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const c=calc(e);rows.push([e.date,LABEL[e.type]+(e.type==='spent'?' - '+CATL[e.cat]:''),e.gig,e.amount,c.fee.toFixed(2),c.net.toFixed(2),e.note])});
   dl('fiverr-tracker-'+S.name.replace(/[^\w-]+/g,'_')+'.csv',rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
 }
 $('imp').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
-  const clean=list=>(list||[]).filter(x=>x&&x.date&&LABEL[x.type]).map(x=>({id:x.id||Date.now()+Math.random(),date:String(x.date),type:x.type,gig:String(x.gig||''),amount:num(x.amount),note:String(x.note||'')}));
+  const clean=list=>(list||[]).map(norm).filter(x=>x&&x.date&&LABEL[x.type]).map(x=>({id:x.id||Date.now()+Math.random(),date:String(x.date),type:x.type,cat:x.cat||'',gig:String(x.gig||''),amount:num(x.amount),note:String(x.note||'')}));
   const r=new FileReader();r.onload=()=>{try{
     const d=JSON.parse(r.result);
     if(Array.isArray(d.profiles)&&d.profiles.length){
@@ -372,7 +540,8 @@ $('imp').addEventListener('change',e=>{
   S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.cur=$('cur').value;S.settings.ret=$('ret').checked;
   save();const keep=document.activeElement;render();if(keep&&keep.id)$(keep.id).focus();
 }));
-$('type').addEventListener('change',()=>$('typeHint').textContent=HINTS[$('type').value]);
+function updHint(){const t=$('type').value;$('catWrap').style.display=t==='spent'?'':'none';$('typeHint').textContent=t==='spent'?CATHINT[$('cat').value]:HINTS[t]}
+$('type').addEventListener('change',updHint);$('cat').addEventListener('change',updHint);
 $('fMonth').addEventListener('change',render);$('fGig').addEventListener('change',render);
 $('amt').addEventListener('keydown',e=>{if(e.key==='Enter')addEntry()});
 
