@@ -44,6 +44,11 @@
   .btn.g:hover{border-color:var(--accent)}
   .chk{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);font-weight:600;margin-top:12px}
   .chk input{width:auto}
+  select.prof{width:auto;max-width:170px;padding:0 10px;font-size:14px;font-weight:700;background:var(--card);cursor:pointer;display:block}
+  .prow{display:flex;gap:8px}
+  .btn.sm{padding:8px 12px;font-size:13px;flex:1}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  @media(max-width:620px){.bar{flex-wrap:wrap;gap:10px}.right{flex-wrap:wrap}}
   .pop-wrap{position:relative}
   .pop{display:none;position:absolute;right:0;top:48px;z-index:30;width:290px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 40px rgba(0,0,0,.22);padding:16px;flex-direction:column;gap:12px}
   .pop.open{display:flex}
@@ -91,11 +96,18 @@
   <div class="bar">
     <div class="brand"><div class="logo">F</div><div><h1>Fiverr Tracker</h1><small>Ads · organic orders · self-placed orders</small></div></div>
     <div class="right">
+      <select class="ib prof" id="profSel" title="Switch profile" onchange="switchProfile(this.value)"></select>
       <a class="ib" href="../" title="All BeeN Tools">⌂ Tools</a>
       <div class="pop-wrap">
         <button class="ib" id="gearBtn" title="Settings" onclick="togglePop(event)">⚙</button>
         <div class="pop" id="pop" onclick="event.stopPropagation()">
-          <h3>Settings</h3>
+          <h3>Profile</h3>
+          <div class="prow">
+            <button class="btn g sm" onclick="addProfile()">+ New</button>
+            <button class="btn g sm" onclick="renameProfile()">Rename</button>
+            <button class="btn g sm" id="delProf" onclick="delProfile()">Delete</button>
+          </div>
+          <h3 style="margin-top:4px">Settings (this profile)</h3>
           <label class="f">Seller fee %<input type="number" id="sFee" min="0" max="100" step="0.1"></label>
           <label class="f">Buyer fee % (self-placed orders)<input type="number" id="bFee" min="0" max="100" step="0.1"></label>
           <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
@@ -172,10 +184,23 @@ const HINTS={
   fake:'An order you placed yourself. You pay the amount plus the buyer fee; the gig earns the amount minus the seller fee.'
 };
 const LABEL={organic:'Organic',adorder:'Ad order',ad:'Ad spend',fake:'Self-placed'};
-let S={settings:{seller:20,buyer:5,cur:'$',ret:true},entries:[]};
+const KEY2='beenFiver2';
+const DEF=()=>({seller:20,buyer:5,cur:'$',ret:true});
+let DB={active:null,profiles:[]}, S=null;   // S = the active profile {id,name,settings,entries}
+const newProfile=name=>({id:'p'+Date.now()+Math.floor(Math.random()*1000),name,settings:DEF(),entries:[]});
 
-function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.entries){S=d;S.settings=Object.assign({seller:20,buyer:5,cur:'$',ret:true},d.settings)}}catch(e){}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function load(){
+  try{const d=JSON.parse(localStorage.getItem(KEY2));if(d&&Array.isArray(d.profiles)&&d.profiles.length)DB=d}catch(e){}
+  if(!DB.profiles.length){            // first run, or migrate data saved by the older single-profile version
+    const p=newProfile('Profile 1');
+    try{const o=JSON.parse(localStorage.getItem(KEY));if(o&&Array.isArray(o.entries)){p.entries=o.entries;p.settings=Object.assign(DEF(),o.settings)}}catch(e){}
+    DB={active:p.id,profiles:[p]};
+  }
+  DB.profiles.forEach(p=>p.settings=Object.assign(DEF(),p.settings));
+  pick(DB.active);
+}
+function pick(id){S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
+function save(){try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}}
 const num=v=>{v=parseFloat(v);return isFinite(v)?v:0};
 const money=v=>{const s=S.settings.cur||'';const a=Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});return (v<0?'−':'')+s+a};
 
@@ -213,7 +238,29 @@ function summary(list){
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 
+function renderProfiles(){
+  $('profSel').innerHTML=DB.profiles.map(p=>`<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  $('profSel').value=S.id;
+  $('delProf').disabled=DB.profiles.length<2;
+}
+function switchProfile(id){pick(id);save();$('fMonth').value='';$('fGig').value='';render()}
+function addProfile(){
+  const n=(prompt('Name for the new profile (e.g. your second Fiverr account):')||'').trim();
+  if(!n)return;
+  const p=newProfile(n);DB.profiles.push(p);switchProfile(p.id);$('pop').classList.remove('open');
+}
+function renameProfile(){
+  const n=(prompt('Rename profile:',S.name)||'').trim();
+  if(!n)return;S.name=n;save();render();
+}
+function delProfile(){
+  if(DB.profiles.length<2)return;
+  if(!confirm('Delete profile "'+S.name+'" and all its entries? Export a backup first if unsure.'))return;
+  DB.profiles=DB.profiles.filter(p=>p.id!==S.id);switchProfile(DB.profiles[0].id);$('pop').classList.remove('open');
+}
+
 function render(){
+  renderProfiles();
   // filters
   const months=[...new Set(S.entries.map(e=>e.date.slice(0,7)))].sort().reverse();
   const gigs=[...new Set(S.entries.map(e=>e.gig||'').filter(Boolean))].sort();
@@ -257,21 +304,28 @@ function addEntry(){
   save();render();
 }
 function del(id){S.entries=S.entries.filter(e=>e.id!==id);save();render()}
-function clearAll(){if(S.entries.length&&confirm('Delete ALL entries from this browser? Export a backup first if unsure.')){S.entries=[];save();render()}}
+function clearAll(){if(S.entries.length&&confirm('Delete ALL entries in profile "'+S.name+'"? Export a backup first if unsure.')){S.entries=[];save();render()}}
 
 function dl(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
-function exportJSON(){dl('fiverr-tracker-backup.json',JSON.stringify(S,null,2),'application/json')}
+function exportJSON(){dl('fiverr-tracker-backup.json',JSON.stringify(DB,null,2),'application/json')}
 function exportCSV(){
   const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
   const rows=[['Date','Type','Gig','Amount','Fee','Net effect','Note']];
   S.entries.slice().sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{const c=calc(e);rows.push([e.date,LABEL[e.type],e.gig,e.amount,c.fee.toFixed(2),c.net.toFixed(2),e.note])});
-  dl('fiverr-tracker.csv',rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
+  dl('fiverr-tracker-'+S.name.replace(/[^\w-]+/g,'_')+'.csv',rows.map(r=>r.map(q).join(',')).join('\n'),'text/csv');
 }
 $('imp').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
-  const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.entries))throw 0;
-    S={settings:Object.assign({seller:20,buyer:5,cur:'$',ret:true},d.settings),entries:d.entries.filter(x=>x&&x.date&&LABEL[x.type]).map(x=>({id:x.id||Date.now()+Math.random(),date:String(x.date),type:x.type,gig:String(x.gig||''),amount:num(x.amount),note:String(x.note||'')}))};
-    save();render();$('msg').textContent='Backup imported.'}catch(err){$('msg').textContent='That file is not a valid backup.'}};
+  const clean=list=>(list||[]).filter(x=>x&&x.date&&LABEL[x.type]).map(x=>({id:x.id||Date.now()+Math.random(),date:String(x.date),type:x.type,gig:String(x.gig||''),amount:num(x.amount),note:String(x.note||'')}));
+  const r=new FileReader();r.onload=()=>{try{
+    const d=JSON.parse(r.result);
+    if(Array.isArray(d.profiles)&&d.profiles.length){
+      DB={active:d.active,profiles:d.profiles.map(p=>({id:String(p.id||newProfile('x').id),name:String(p.name||'Profile'),settings:Object.assign(DEF(),p.settings),entries:clean(p.entries)}))};
+    }else if(Array.isArray(d.entries)){      // older single-profile backup -> goes into the current profile
+      S.entries=clean(d.entries);S.settings=Object.assign(DEF(),d.settings);
+    }else throw 0;
+    pick(DB.active);save();$('fMonth').value='';$('fGig').value='';render();$('msg').textContent='Backup imported.'
+  }catch(err){$('msg').textContent='That file is not a valid backup.'}};
   r.readAsText(f);e.target.value='';
 });
 
