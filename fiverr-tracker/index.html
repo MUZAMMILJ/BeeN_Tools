@@ -204,7 +204,6 @@
           <label class="f">Buy tax % (self paid orders)<input type="number" id="tFee" min="0" max="100" step="0.1"></label>
           <label class="f">Exchange rate fee % (self paid orders)<input type="number" id="xFee" min="0" max="100" step="0.1"></label>
           <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
-          <label class="chk"><input type="checkbox" id="ret"> Earnings from my self paid orders come back to me</label>
         </div>
       </div>
       <button class="ib" id="themeBtn" title="Dark / Light" onclick="BeeN.toggleTheme(this)">🌙</button>
@@ -314,7 +313,7 @@ function load(){
   DB.profiles.forEach(p=>{p.settings=Object.assign(DEF(),p.settings);p.entries=(p.entries||[]).map(norm)});
   pick(DB.active);
 }
-function pick(id){S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
+function pick(id){DB.profiles.forEach(p=>p.settings.ret=true);S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
 function save(){try{localStorage.setItem(KEY2,JSON.stringify(DB))}catch(e){}}
 const num=v=>{v=parseFloat(v);return isFinite(v)?v:0};
 const money=v=>{const s=S.settings.cur||'';const a=Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});return (v<0?'−':'')+s+a};
@@ -442,7 +441,7 @@ function render(){
     <div class="card"><span>Net earnings</span><b class="pos">${money(r.netEarn)}</b><small>after fee</small></div>
     <div class="card"><span>Ad spend</span><b class="neg">${money(-r.adSpend)}</b><small>spent on Fiverr ads</small></div>
     <div class="card"><span>Self paid orders</span><b class="neg">${money(-r.fakeNet)}</b><small>${r.fakeN} ${r.fakeN===1?"order":"orders"} · paid ${money(r.fakeSpent)}</small></div>
-    <div class="card"><span>Self paid returned</span><b class="pos" data-k="rb" data-count="${r.fakeBack}">${money(r.fakeBack)}</b><small>${S.settings.ret?'comes back to your balance':'off · enable in ⚙ Settings'}</small></div>`;
+    <div class="card"><span>Self paid returned</span><b class="pos" data-k="rb" data-count="${r.fakeBack}">${money(r.fakeBack)}</b><small>${S.settings.ret?'comes back to your balance':''}</small></div>`;
   animateCounts($('cards'));
 
   $('rows').innerHTML=list.map(e=>{
@@ -456,7 +455,7 @@ function render(){
   }).join('');
   lastNew=null;
   $('empty').style.display=list.length?'none':'block';
-  $('sFee').value=S.settings.seller;$('bFee').value=S.settings.buyer;$('tFee').value=S.settings.tax;$('xFee').value=S.settings.fx;$('cur').value=S.settings.cur;$('ret').checked=!!S.settings.ret;
+  $('sFee').value=S.settings.seller;$('bFee').value=S.settings.buyer;$('tFee').value=S.settings.tax;$('xFee').value=S.settings.fx;$('cur').value=S.settings.cur;
   updHint();
 }
 
@@ -616,8 +615,8 @@ $('imp').addEventListener('change',e=>{
   r.readAsText(f);e.target.value='';
 });
 
-['sFee','bFee','tFee','xFee','cur','ret'].forEach(id=>$(id).addEventListener('input',()=>{
-  S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.tax=num($('tFee').value);S.settings.fx=num($('xFee').value);S.settings.cur=$('cur').value;S.settings.ret=$('ret').checked;
+['sFee','bFee','tFee','xFee','cur'].forEach(id=>$(id).addEventListener('input',()=>{
+  S.settings.seller=num($('sFee').value);S.settings.buyer=num($('bFee').value);S.settings.tax=num($('tFee').value);S.settings.fx=num($('xFee').value);S.settings.cur=$('cur').value;S.settings.ret=true;
   save();const keep=document.activeElement;render();if(keep&&keep.id)$(keep.id).focus();
 }));
 function updHint(){
