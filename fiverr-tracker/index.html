@@ -6,6 +6,23 @@
 <title>Fiverr Tracker — BeeN Tools</title>
 <link rel="stylesheet" href="../assets/shared.css">
 <style>
+  /* Fiverr-style palette (this tool only) */
+  :root{--bg:#f7f7f7;--card:#ffffff;--ink:#404145;--muted:#74767e;--line:#e4e5e7;--field:#f7f7f7;
+        --accent:#1dbf73;--accent-ink:#ffffff;--glow:rgba(29,191,115,.22);--shadow:0 6px 20px rgba(0,0,0,.06)}
+  [data-theme="dark"]{--bg:#0c1a12;--card:#14261b;--ink:#eef5f0;--muted:#8fa398;--line:#24422f;--field:#1a3123;
+        --accent:#1dbf73;--accent-ink:#04230f;--glow:rgba(29,191,115,.2);--shadow:0 6px 20px rgba(0,0,0,.4)}
+  .brand .logo{background:#1dbf73!important;color:#fff!important;font-family:Georgia,serif;font-style:italic;font-size:24px}
+  .ib:hover{border-color:#1dbf73}
+  .btn{color:#fff}
+  [data-theme="dark"] .btn{color:#04230f}
+  .btn.g{color:var(--ink)}
+  .card.big{background:linear-gradient(135deg,#1dbf73,#0e9b5a);color:#fff}
+  .card.big span{color:#fff}
+  input:focus,select:focus{border-color:#1dbf73;box-shadow:0 0 0 3px rgba(29,191,115,.15)}
+  .tp.ad{background:#fff3d6;color:#a86400}
+  .pos{color:#0e9b5a}
+  [data-theme="dark"] .pos{color:#3ddc97}
+
   .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
   .bar{display:flex;align-items:center;justify-content:space-between;padding:18px 0}
   .brand{display:flex;align-items:center;gap:12px}
