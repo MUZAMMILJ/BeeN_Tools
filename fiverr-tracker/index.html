@@ -250,7 +250,8 @@
           <label class="f">Seller fee %<input type="number" id="sFee" min="0" max="100" step="0.1"></label>
           <label class="f">Buyer fee % (self paid orders)<input type="number" id="bFee" min="0" max="100" step="0.1"></label>
           <label class="f">Buy tax % (self paid orders)<input type="number" id="tFee" min="0" max="100" step="0.1"></label>
-          <label class="f">Exchange rate fee % (self paid orders)<input type="number" id="xFee" min="0" max="100" step="0.1"></label>
+          <label class="f">Exchange loss % (buy vs sell rate)<input type="number" id="xFee" min="0" max="100" step="0.01"></label>
+          <div style="font-size:11.5px;color:var(--muted);margin:-4px 0 6px">Buy 280, sell 265 → (280 − 265) ÷ 280 = 5.36%. Charged on the money that comes back.</div>
           <label class="f">Currency symbol<input type="text" id="cur" maxlength="4"></label>
           <h3 style="margin-top:4px">Account</h3>
           <div class="acct" id="acct"></div>
@@ -316,7 +317,7 @@
   <div class="panel">
     <h2>Entries</h2>
     <div class="tw"><table>
-      <thead><tr><th>Date</th><th>Type</th><th>Gig</th><th class="n">Amount</th><th class="n">Fee</th><th class="n">Returns</th><th class="n">Net effect</th><th></th></tr></thead>
+      <thead><tr><th>Date</th><th>Type</th><th>Gig</th><th class="n">Amount</th><th class="n">Fees</th><th class="n">Returns</th><th class="n">Net effect</th><th></th></tr></thead>
       <tbody id="rows"></tbody>
     </table></div>
     <div class="empty" id="empty">No entries yet. Add your first one above.</div>
@@ -343,7 +344,7 @@ const $=id=>document.getElementById(id);
 const HINTS={
   organic:'Money you received from an order that came by itself. Fiverr takes the seller fee from it.',
   ads:'Money you spent on Fiverr ads. Counts fully as an expense.',
-  fake:'An order you placed yourself: you pay the order plus buyer fee, buy tax and exchange fee; the gig earns the order minus the seller fee.'
+  fake:'An order you paid for yourself. Enter the total you paid (buyer fee and tax are inside it). The gig earns the order price minus the seller fee, and changing that money back costs the exchange loss.'
 };
 const LABEL={organic:'Organic order',ads:'Ads',fake:'Self paid order'};
 // older versions used other types; convert them to the 3 current ones
@@ -354,7 +355,7 @@ function norm(e){if(!e)return e;const x=Object.assign({},e);
   delete x.cat;return x}
 const KEY2='beenFiver2';
 let LKEY=KEY2;   // becomes beenFiver2_<uid> once someone is signed in
-const DEF=()=>({seller:20,buyer:5,tax:7,fx:2,cur:'$',ret:true});
+const DEF=()=>({seller:20,buyer:5,tax:7,fx:5.36,cur:'$',ret:true});
 let DB={active:null,profiles:[]}, S=null, syncT=null, FB=null, gUser=null;   // S = the active profile {id,name,settings,entries}
 const newProfile=name=>({id:'p'+Date.now()+Math.floor(Math.random()*1000),name,settings:DEF(),upd:Date.now(),entries:[]});
 
@@ -373,6 +374,10 @@ function load(){
     DB={active:p.id,profiles:[p]};
   }
   DB.profiles.forEach(p=>{p.settings=Object.assign(DEF(),p.settings);p.entries=(p.entries||[]).map(norm)});
+  if(!DB.v||DB.v<2){                           // exchange loss is now the buy-vs-sell rate gap (default 5.36%); replace the old 2% guess once
+    DB.profiles.forEach(p=>{if(num(p.settings.fx)===2){p.settings.fx=5.36;p.upd=Date.now()}});
+    DB.v=2;
+  }
   pick(DB.active);
 }
 function pick(id){DB.profiles.forEach(p=>p.settings.ret=true);S=DB.profiles.find(p=>p.id===id)||DB.profiles[0];DB.active=S.id}
@@ -386,19 +391,23 @@ function calc(e,st){
   const a=num(e.amount),sf=num(st.seller)/100,bf=num(st.buyer)/100,tx=num(st.tax)/100,fx=num(st.fx)/100;
   if(e.type==='organic'){const seller=a*sf;return{fee:seller,net:a-seller,parts:{seller}}}   // you receive amount − seller fee
   if(e.type==='ads'){return{fee:0,net:-a,parts:{}}}                                         // pure expense
-  // self paid order — what you PAY: order + buyer fee + buy tax + exchange fee
-  //                  what COMES BACK: order − seller fee (only if "comes back" is on)
-  const buyer=a*bf,tax=a*tx,fxf=a*fx,spent=a+buyer+tax+fxf;
-  const seller=st.ret?a*sf:0, back=st.ret?a-seller:0;
-  return{fee:buyer+tax+fxf+seller,net:-(spent-back),spent,back,parts:{buyer,tax,fx:fxf,seller}};
+  // self paid order — the amount you type is what you PAID (buyer fee + buy tax are inside it)
+  //   order price   = paid ÷ (1 + buyer% + tax%)
+  //   comes back    = order price − seller fee
+  //   exchange loss = % of the money that comes back (buy rate vs sell rate gap)
+  const price=a/(1+bf+tx),buyer=price*bf,tax=price*tx;
+  const seller=st.ret?price*sf:0, back=st.ret?price-seller:0, fxf=back*fx;
+  return{fee:buyer+tax+seller+fxf,net:back-fxf-a,spent:a,back,price,parts:{buyer,tax,fx:fxf,seller}};
 }
 // readable breakdowns (used in tooltips + the live preview)
 function feeLines(e,c,st){
   st=st||S.settings;const L=[];
   if(e.type==='organic')L.push(`Seller fee ${st.seller}% = ${money(c.parts.seller)}`);
   else if(e.type==='fake'){
-    L.push(`Buyer fee ${st.buyer}% = ${money(c.parts.buyer)}`,`Buy tax ${st.tax}% = ${money(c.parts.tax)}`,`Exchange fee ${st.fx}% = ${money(c.parts.fx)}`);
-    L.push(st.ret?`Seller fee ${st.seller}% = ${money(c.parts.seller)} (taken from the return)`:'Seller fee: not counted (returns are off)');
+    L.push(`You paid ${money(num(e.amount))} = order ${money(c.price)} + fees`,
+      `Buyer fee ${st.buyer}% = ${money(c.parts.buyer)}`,`Buy tax ${st.tax}% = ${money(c.parts.tax)}`,
+      `Seller fee ${st.seller}% = ${money(c.parts.seller)} (kept by Fiverr)`,
+      `Exchange loss ${st.fx}% of returned money = ${money(c.parts.fx)}`);
   }
   if(L.length>1)L.push(`Total fees = ${money(c.fee)}`);
   return L.join('\n');
@@ -406,10 +415,10 @@ function feeLines(e,c,st){
 function backTip(e,c,st){
   st=st||S.settings;
   if(e.type!=='fake')return '';
-  return st.ret?`Order ${money(num(e.amount))} − seller fee ${st.seller}% (${money(c.parts.seller)}) = ${money(c.back)} comes back to your balance`:'Returns are turned off in ⚙ Settings';
+  return st.ret?`Order ${money(c.price)} − seller fee ${st.seller}% (${money(c.parts.seller)}) = ${money(c.back)} comes back to your balance`:'Returns are turned off in ⚙ Settings';
 }
 function netTip(e,c){
-  if(e.type==='fake')return `Paid ${money(c.spent)} (order + buyer fee + tax + exchange)\nReturned ${money(c.back)}\nNet cost = ${money(-c.net)}`;
+  if(e.type==='fake')return `Returned ${money(c.back)}\n− exchange loss ${money(c.parts.fx)}\n− paid ${money(c.spent)}\nNet cost = ${money(-c.net)}`;
   if(e.type==='organic')return `Order ${money(num(e.amount))} − seller fee ${S.settings.seller}% (${money(c.fee)}) = ${money(c.net)} earned`;
   return `Ad spend ${money(num(e.amount))}`;
 }
@@ -510,7 +519,7 @@ function render(){
     const c=calc(e);
     return `<tr${e.id===lastNew?' class="newrow"':''}><td>${esc(e.date)}</td><td><span class="tp ${e.type}">${LABEL[e.type]}</span></td>
       <td>${esc(e.gig||'—')}${e.note?`<div class="note">${esc(e.note)}</div>`:''}</td>
-      <td class="n">${money(num(e.amount))}</td><td class="n">${c.fee?`<span class="tipc" data-tip="${esc(feeLines(e,c))}">${money(-c.fee)}</span>`:'—'}</td>
+      <td class="n">${money(num(e.amount))}</td><td class="n">${c.fee?`<span class="tipc" data-tip="${esc(feeLines(e,c))}">${money(c.fee)}</span>`:'—'}</td>
       <td class="n pos">${c.back?`<span class="tipc" data-tip="${esc(backTip(e,c))}">+${money(c.back)}</span>`:'—'}</td>
       <td class="n ${cls(c.net)}"><b class="tipc" data-tip="${esc(netTip(e,c))}">${money(c.net)}</b></td>
       <td class="n"><button class="del" title="Delete" onclick="del(${e.id})">×</button></td></tr>`;
@@ -767,7 +776,7 @@ function updHint(){
   let x=HINTS[t];
   if(a>0&&t!=='ads'){
     const e={type:t,amount:a},c=calc(e),st=S.settings;
-    if(t==='fake')x+=` → You pay ${money(c.spent)} (order ${money(a)} + buyer fee ${money(c.parts.buyer)} + buy tax ${money(c.parts.tax)} + exchange ${money(c.parts.fx)}). `+(st.ret?`Returns ${money(c.back)} (order − seller fee ${money(c.parts.seller)}). `:'Nothing comes back. ')+`Net cost ${money(-c.net)}.`;
+    if(t==='fake')x+=` → Of your ${money(a)}, the order price is ${money(c.price)} (buyer fee ${money(c.parts.buyer)} + buy tax ${money(c.parts.tax)} inside). `+(st.ret?`Returns ${money(c.back)} (order − seller fee ${money(c.parts.seller)}), exchange loss ${money(c.parts.fx)}. `:'Nothing comes back. ')+`Net cost ${money(-c.net)}.`;
     else x+=` → You receive ${money(c.net)} (order ${money(a)} − seller fee ${money(c.parts.seller)}).`;
   }
   $('typeHint').textContent=x;
