@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://muzammilj.github.io/BeeN_Tools/sitemap.xml

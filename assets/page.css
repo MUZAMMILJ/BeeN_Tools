@@ -1,0 +1,40 @@
+/* BeeN Tools — shared layout for info pages (About, Contact, Privacy, Terms) */
+html{scroll-behavior:smooth}
+body{min-height:100vh;display:flex;flex-direction:column;line-height:1.6}
+a{color:inherit}
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 24px}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;justify-content:space-between;height:68px}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;font-weight:800;font-size:18px}
+.brand .logo{width:36px;height:36px;font-size:19px;border-radius:10px}
+.links{display:flex;align-items:center;gap:6px}
+.links a{text-decoration:none;font-size:14.5px;font-weight:600;color:var(--muted);padding:8px 14px;border-radius:10px;transition:color .15s,background .15s}
+.links a:hover,.links a.on{color:var(--ink);background:var(--field)}
+.theme{border:1px solid var(--line);background:var(--card);color:var(--ink);width:38px;height:38px;border-radius:10px;font-size:16px;cursor:pointer}
+.theme:hover{border-color:var(--accent)}
+.btn{display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:12px;background:var(--accent);color:var(--accent-ink);box-shadow:0 6px 18px var(--glow);transition:transform .15s}
+.btn:hover{transform:translateY(-2px)}
+main{flex:1}
+.crumbs{font-size:13.5px;color:var(--muted);padding:26px 0 0}
+.crumbs a{text-decoration:none}.crumbs a:hover{color:var(--accent)}
+.prose{max-width:780px;padding:18px 0 72px}
+.prose h1{font-size:clamp(32px,5vw,46px);letter-spacing:-.025em;line-height:1.15;margin:8px 0 14px}
+.prose .lead{font-size:18.5px;color:var(--muted);margin:0 0 30px}
+.prose h2{font-size:24px;letter-spacing:-.015em;margin:38px 0 10px}
+.prose p,.prose li{font-size:16.5px;color:color-mix(in srgb,var(--ink) 88%,var(--muted))}
+.prose ul{padding-left:22px}.prose li{margin:6px 0}
+.prose a{color:var(--accent);font-weight:600}
+.prose .note{padding:16px 18px;border:1px solid var(--line);background:var(--card);border-radius:14px;margin:22px 0}
+.prose .upd{color:var(--muted);font-size:14px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0}
+.cards a{display:block;text-decoration:none;padding:20px;border:1px solid var(--line);background:var(--card);border-radius:16px;color:var(--ink);font-weight:400;transition:transform .15s,border-color .15s}
+.cards a:hover{transform:translateY(-3px);border-color:var(--accent)}
+.cards b{display:block;font-size:17px;margin-bottom:4px}.cards span{color:var(--muted);font-size:14.5px}
+footer{border-top:1px solid var(--line);background:var(--card);margin-top:auto}
+.f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;padding:52px 0 36px}
+.f-grid p{color:var(--muted);font-size:14.5px;line-height:1.65;max-width:320px;margin:14px 0 0}
+.f-grid h4{margin:0 0 14px;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.f-grid a{display:block;text-decoration:none;font-size:14.5px;font-weight:600;padding:5px 0;color:var(--ink)}
+.f-grid a.brand{display:flex}.f-grid a:hover{color:var(--accent)}
+.copy{border-top:1px solid var(--line);padding:20px 0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;color:var(--muted);font-size:13.5px}
+@media(max-width:860px){.links{display:none}.f-grid{grid-template-columns:1fr 1fr}.f-grid>div:first-child{grid-column:1/-1}.cards{grid-template-columns:1fr}}

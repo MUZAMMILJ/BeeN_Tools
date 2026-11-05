@@ -3,10 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BeeN Tools — Simple online tools for everyday life</title>
-<meta name="description" content="BeeN Tools is a growing collection of simple, fast and free online tools. Split bills, save monthly records and more.">
-<meta property="og:title" content="BeeN Tools">
-<meta property="og:description" content="Simple, fast and free online tools for everyday life.">
+<title>BeeN Tools – Free Online Bill Splitter &amp; Fiverr Profit Tracker</title>
+<meta name="description" content="Free online tools by BeeN Tools: split rent and shared bills with a bill calculator, and track Fiverr orders, ads and fees with a profit tracker.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://muzammilj.github.io/BeeN_Tools/">
+<meta name="theme-color" content="#f5a623">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BeeN Tools">
+<meta property="og:title" content="BeeN Tools – Free Online Bill Splitter &amp; Fiverr Profit Tracker">
+<meta property="og:description" content="Free online tools by BeeN Tools: split rent and shared bills with a bill calculator, and track Fiverr orders, ads and fees with a profit tracker.">
+<meta property="og:url" content="https://muzammilj.github.io/BeeN_Tools/">
+<meta property="og:image" content="https://muzammilj.github.io/BeeN_Tools/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">[{"@context": "https://schema.org", "@type": "WebSite", "name": "BeeN Tools", "url": "https://muzammilj.github.io/BeeN_Tools/", "description": "Free online tools by BeeN Tools: split rent and shared bills with a bill calculator, and track Fiverr orders, ads and fees with a profit tracker.", "inLanguage": "en"}, {"@context": "https://schema.org", "@type": "Organization", "name": "BeeN Tools", "url": "https://muzammilj.github.io/BeeN_Tools/", "logo": "https://muzammilj.github.io/BeeN_Tools/apple-touch-icon.png"}, {"@context": "https://schema.org", "@type": "ItemList", "name": "BeeN Tools", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "BeeN Calculator", "url": "https://muzammilj.github.io/BeeN_Tools/bill-calculator/"}, {"@type": "ListItem", "position": 2, "name": "Fiverr Tracker", "url": "https://muzammilj.github.io/BeeN_Tools/fiverr-tracker/"}]}]</script>
 <link rel="stylesheet" href="assets/shared.css">
 <style>
   html{scroll-behavior:smooth;scroll-padding-top:80px}
@@ -110,7 +123,7 @@
 
   /* FOOTER */
   footer{border-top:1px solid var(--line);background:var(--card);margin-top:auto}
-  .f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:40px;padding:52px 0 36px}
+  .f-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:40px;padding:52px 0 36px}
   .f-grid p{color:var(--muted);font-size:14.5px;line-height:1.65;max-width:320px;margin:14px 0 0}
   .f-grid h4{margin:0 0 14px;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
   .f-grid a{display:block;text-decoration:none;font-size:14.5px;font-weight:600;padding:5px 0;color:var(--ink)}
@@ -236,6 +249,8 @@
   </div>
 </section>
 
+<div class="ad-slot" data-slot="home" aria-label="Advertisement"></div>
+
 <!-- ABOUT -->
 <section class="alt" id="about">
   <div class="wrap about">
@@ -243,7 +258,7 @@
       <p class="eyebrow">About</p>
       <h2 class="s-title">Small tools, made with care</h2>
       <p>BeeN Tools started with a simple bill calculator and is growing into a home for useful everyday tools.</p>
-      <p>Every tool lives on its own page under this one website, shares the same look and the same login, and stays free and easy to use.</p>
+      <p>Every tool lives on its own page under this one website, shares the same look and the same login, and stays free and easy to use. <a href="about/" style="color:var(--accent);font-weight:700">More about BeeN Tools →</a></p>
     </div>
     <div class="stats">
       <div class="stat"><b id="statTools">1</b><span>Tools live</span></div>
@@ -282,7 +297,15 @@
       <div>
         <h4>Tools</h4>
         <a href="bill-calculator/">BeeN Calculator</a>
+        <a href="fiverr-tracker/">Fiverr Tracker</a>
         <a href="https://github.com/MUZAMMILJ/BeeN_Tools" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <a href="about/">About us</a>
+        <a href="contact/">Contact</a>
+        <a href="privacy/">Privacy Policy</a>
+        <a href="terms/">Terms of Use</a>
       </div>
     </div>
     <div class="copy"><span>© <span id="yr"></span> BeeN Tools. All rights reserved.</span><span>Made with care.</span></div>
@@ -290,6 +313,7 @@
 </footer>
 
 <script src="assets/shared.js"></script>
+<script src="assets/ads.js"></script>
 <script>
   BeeN.initTheme(document.getElementById('themeBtn'));
   document.getElementById('yr').textContent=new Date().getFullYear();
