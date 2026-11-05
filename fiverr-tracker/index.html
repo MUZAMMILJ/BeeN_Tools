@@ -393,11 +393,13 @@ function calc(e,st){
   if(e.type==='ads'){return{fee:0,net:-a,parts:{}}}                                         // pure expense
   // self paid order — the amount you type is what you PAID (buyer fee + buy tax are inside it)
   //   order price   = paid ÷ (1 + buyer% + tax%)
-  //   comes back    = order price − seller fee
-  //   exchange loss = % of the money that comes back (buy rate vs sell rate gap)
+  //   exchange loss = % of (order price − seller fee), the money that gets changed back (buy vs sell rate gap)
+  //   Fees          = buyer fee + buy tax + seller fee + exchange loss
+  //   comes back    = paid − Fees   (so Amount = Fees + Returns, and Net = −Fees)
   const price=a/(1+bf+tx),buyer=price*bf,tax=price*tx;
-  const seller=st.ret?price*sf:0, back=st.ret?price-seller:0, fxf=back*fx;
-  return{fee:buyer+tax+seller+fxf,net:back-fxf-a,spent:a,back,price,parts:{buyer,tax,fx:fxf,seller}};
+  const seller=st.ret?price*sf:0, gross=st.ret?price-seller:0, fxf=gross*fx;
+  const fee=buyer+tax+seller+fxf, back=st.ret?a-fee:0;
+  return{fee,net:back-a,spent:a,back,price,parts:{buyer,tax,fx:fxf,seller}};
 }
 // readable breakdowns (used in tooltips + the live preview)
 function feeLines(e,c,st){
@@ -415,10 +417,10 @@ function feeLines(e,c,st){
 function backTip(e,c,st){
   st=st||S.settings;
   if(e.type!=='fake')return '';
-  return st.ret?`Order ${money(c.price)} − seller fee ${st.seller}% (${money(c.parts.seller)}) = ${money(c.back)} comes back to your balance`:'Returns are turned off in ⚙ Settings';
+  return st.ret?`Paid ${money(num(e.amount))} − total fees ${money(c.fee)} = ${money(c.back)} comes back to your balance`:'Returns are turned off in ⚙ Settings';
 }
 function netTip(e,c){
-  if(e.type==='fake')return `Returned ${money(c.back)}\n− exchange loss ${money(c.parts.fx)}\n− paid ${money(c.spent)}\nNet cost = ${money(-c.net)}`;
+  if(e.type==='fake')return `Returned ${money(c.back)} − paid ${money(c.spent)}\nNet cost = total fees = ${money(-c.net)}`;
   if(e.type==='organic')return `Order ${money(num(e.amount))} − seller fee ${S.settings.seller}% (${money(c.fee)}) = ${money(c.net)} earned`;
   return `Ad spend ${money(num(e.amount))}`;
 }
@@ -776,7 +778,7 @@ function updHint(){
   let x=HINTS[t];
   if(a>0&&t!=='ads'){
     const e={type:t,amount:a},c=calc(e),st=S.settings;
-    if(t==='fake')x+=` → Of your ${money(a)}, the order price is ${money(c.price)} (buyer fee ${money(c.parts.buyer)} + buy tax ${money(c.parts.tax)} inside). `+(st.ret?`Returns ${money(c.back)} (order − seller fee ${money(c.parts.seller)}), exchange loss ${money(c.parts.fx)}. `:'Nothing comes back. ')+`Net cost ${money(-c.net)}.`;
+    if(t==='fake')x+=` → Of your ${money(a)}, the order price is ${money(c.price)} (buyer fee ${money(c.parts.buyer)} + buy tax ${money(c.parts.tax)} inside). `+(st.ret?`Fees ${money(c.fee)} (incl. seller fee ${money(c.parts.seller)} and exchange loss ${money(c.parts.fx)}), so ${money(c.back)} comes back. `:'Nothing comes back. ')+`Net cost ${money(-c.net)}.`;
     else x+=` → You receive ${money(c.net)} (order ${money(a)} − seller fee ${money(c.parts.seller)}).`;
   }
   $('typeHint').textContent=x;
