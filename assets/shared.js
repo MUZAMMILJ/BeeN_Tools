@@ -9,7 +9,7 @@ window.BeeN = {
     ads: {
       enabled: false,                       // master switch: true = show AdSense ads (needs a real client id)
       client: 'ca-pub-0000000000000000',    // your AdSense publisher id
-      slots: { home: '', calculator: '' }   // optional ad unit ids; leave '' to use Auto ads only
+      slots: { home: '', calculator: '', converter: '' }   // optional ad unit ids; leave '' to use Auto ads only
     }
   },
   themeKey: 'beenTheme',
